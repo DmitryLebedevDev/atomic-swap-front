@@ -2,6 +2,8 @@ import React, { FC } from 'react';
 
 import { BrowserRouter } from 'react-router-dom'
 import { Routes } from './routes'
+import './api/ws'
+import './models/init'
 import './App.css'
 
 function App() {
