@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 import { wsClient } from '../../api/ws';
-import { ActiveOrdersTable } from './ActiveOrdersTable/ActiveOrdersTable';
+import { ActiveOrdersList } from './ActiveOrdersList/ActiveOrdersList';
 
 export const Home = () => {
   useEffect(() => {
@@ -17,7 +17,7 @@ export const Home = () => {
 
   return (
     <div>
-      <ActiveOrdersTable/>
+      <ActiveOrdersList/>
     </div>
   )
 }
