@@ -1,0 +1,20 @@
+.ordersList {
+  padding: 8px;
+  height: 100vh;
+  direction: rtl;
+  overflow-y: auto;
+  & > * {
+    direction: ltr;
+  }
+  & > div + div {
+    margin-top: 8px;
+  }
+  &::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+    background-color: #40a9ff
+  }
+  &::-webkit-scrollbar {
+    width: 10px;
+	  background-color: #F5F5F5;
+  }
+}
