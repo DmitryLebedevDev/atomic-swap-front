@@ -1,5 +1,4 @@
-import React, { useEffect } from 'react'
-import { wsClient } from '../../api/ws';
+import React from 'react'
 import { ActiveOrdersList } from './ActiveOrdersList/ActiveOrdersList';
 import './Home.scss'
 
