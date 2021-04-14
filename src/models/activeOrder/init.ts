@@ -1,6 +1,10 @@
-import { $activeOrder, activeOrderFx } from ".";
-import { wsClientEmitP } from "../../api/ws";
+import { $activeOrder, activeOrderFx, setActiveOrderEvent } from ".";
+import { wsClient, wsClientEmitP } from "../../api/ws";
 
-activeOrderFx.use((orderId) => wsClientEmitP('acceptOrder', orderId))
+activeOrderFx.use((order) => {
+  wsClientEmitP('acceptOrder', order.id)
+  setActiveOrderEvent(order)
+})
 
-$activeOrder.on(activeOrderFx.doneData, (_, order) => order);
+$activeOrder.on(setActiveOrderEvent, (_, order) => order);
+$activeOrder.watch(console.log);

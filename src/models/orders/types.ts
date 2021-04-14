@@ -5,3 +5,10 @@ export interface Iorder {
   toValue: number,
   toValuePair: 'regnet' | 'testnet'
 }
+
+export interface IcreateOrderDto {
+  fromValue: number,
+  fromValuePair: 'regnet' | 'testnet',
+  toValue: number,
+  toValuePair: 'regnet' | 'testnet'
+}

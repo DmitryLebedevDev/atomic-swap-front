@@ -1,0 +1,15 @@
+.createOrder {
+  margin-top: 10px;
+  width: 380px;
+  display: inline-flex;
+  flex-direction: column;
+  &Pairs {
+    display: flex;
+    justify-content: space-around;
+  }
+  &CreateBtn {
+    margin-top: 10px;
+    display: flex;
+    justify-content: center;
+  }
+}

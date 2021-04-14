@@ -1,9 +1,11 @@
-import { $orders, addOrderEvent, deleteOrderEvent, setOrdersEvent } from ".";
-import { wsClient } from "../../api/ws";
+import { $orders, addOrderEvent, createOrderFx, deleteOrderEvent, setOrdersEvent } from ".";
+import { wsClient, wsClientEmitP } from "../../api/ws";
 
 wsClient.on('openOrders', setOrdersEvent);
 wsClient.on('newOrder', addOrderEvent);
 wsClient.on('deleteOrder', deleteOrderEvent);
+
+createOrderFx.use((order) => wsClientEmitP('newOrder', order));
 
 $orders
   .on(setOrdersEvent, (_, orders) => orders)

@@ -1,7 +1,10 @@
-import { createEvent, createStore } from "effector";
-import { Iorder } from "./types";
+import { createEffect, createEvent, createStore } from "effector";
+import { IcreateOrderDto, Iorder } from "./types";
 
-export const $orders = createStore<Iorder[]>([]);
 export const deleteOrderEvent = createEvent<number>();
 export const setOrdersEvent   = createEvent<Iorder[]>();
 export const addOrderEvent    = createEvent<Iorder>();
+
+export const createOrderFx = createEffect<IcreateOrderDto, void>();
+
+export const $orders = createStore<Iorder[]>([]);

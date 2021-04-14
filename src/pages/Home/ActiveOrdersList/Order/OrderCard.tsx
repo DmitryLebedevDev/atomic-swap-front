@@ -6,17 +6,18 @@ import './OrderCard.scss'
 
 interface Iprops {
   order: Iorder,
-  acceptFn: (id: number) => void
+  acceptFn: (order: Iorder) => void
 }
 
 export const OrderCard:FC<Iprops> = memo(({
-  order: {id, fromValuePair, fromValue, toValue, toValuePair},
+  order,
   acceptFn
 }) => {
+  const {fromValuePair, fromValue, toValue, toValuePair} = order;
   return (
     <Card
       actions={[
-        <PlusOutlined onClick={() => acceptFn(id)}/>
+        <PlusOutlined onClick={() => acceptFn(order)}/>
       ]}
       hoverable
     >

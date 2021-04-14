@@ -1,5 +1,8 @@
-import { createEffect, createStore } from "effector";
+import { createEffect, createEvent, createStore } from "effector";
 import { Iorder } from "../orders/types";
 
-export const activeOrderFx = createEffect<number, Iorder>();
+export const setActiveOrderEvent = createEvent<Iorder>();
+
+export const activeOrderFx = createEffect<Iorder, void>();
+
 export const $activeOrder = createStore<Iorder|null>(null);
