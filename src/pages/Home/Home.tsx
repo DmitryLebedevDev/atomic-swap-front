@@ -1,6 +1,7 @@
 import React from 'react'
 import { ActiveOrdersList } from './ActiveOrdersList/ActiveOrdersList';
 import { CreateOrder } from './CreateOrder/CreateOrder';
+import { CurrentOrder } from './CurrentOrder/CurrentOrder';
 import './Home.scss'
 
 export const Home = () => {
@@ -8,6 +9,7 @@ export const Home = () => {
     <div className="homeLayout">
       <ActiveOrdersList/>
       <CreateOrder/>
+      <CurrentOrder/>
     </div>
   )
 }
