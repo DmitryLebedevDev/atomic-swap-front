@@ -1,9 +1,18 @@
 import { guard, sample } from "effector";
-import { $activeOrder, acceptOrderEvent, activeOrderFx, setActiveOrderEvent } from ".";
+import {
+  $activeOrder,
+  acceptOrderEvent,
+  activeOrderFx,
+  setActiveOrderEvent,
+  setFromPubKeyForActiveOrderEvent,
+  setToPubKeyForActiveOrderEvent
+} from ".";
 import { wsClient, wsClientEmitP } from "../../api/ws";
 import { $orders, isMainOrder } from "../orders";
 import { Iorder } from "../orders/types";
 
+// wsClient.on('sendToPairPubKey', )
+// wsClient.on('sendFromPairPubKey', )
 wsClient.on('acceptOrder', acceptOrderEvent)
 guard({
   source: sample(
@@ -19,6 +28,16 @@ guard({
 activeOrderFx.use(async (order) => {
   await wsClientEmitP('acceptOrder', order.id)
   setActiveOrderEvent(order)
+  //setToPubKeyForActiveOrderEvent();
 })
 
-$activeOrder.on(setActiveOrderEvent, (_, order) => order);
+$activeOrder
+  .on(setActiveOrderEvent, (_, order) => order)
+  .on(
+    setToPubKeyForActiveOrderEvent,
+    (order, toPubKey) => order ? ({...order, toPubKey}) : null
+  )
+  .on(
+    setFromPubKeyForActiveOrderEvent,
+    (order, fromPubKey) => order ? ({...order, fromPubKey}) : null
+  )
