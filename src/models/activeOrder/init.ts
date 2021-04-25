@@ -1,19 +1,51 @@
-import {attach, forward, guard, sample} from "effector";
+import {Event, guard, sample} from "effector"
 import {
   $activeOrder,
   acceptOrderEvent,
-  activeOrderFx, sendPubKeyToOrderFx,
+  activeOrderFx,
+  onSendFromPairPubKey,
+  onSendToPairPubKey,
+  sendPubKeyToOrderFx,
   setActiveOrderEvent,
   setFromPubKeyForActiveOrderEvent,
   setToPubKeyForActiveOrderEvent
-} from ".";
-import { wsClient, wsClientEmitP } from "../../api/ws";
-import { $orders, isMainOrder } from "../orders";
-import { Iorder } from "../orders/types";
-import {$userWallets} from "../user";
+} from "."
+import { wsClient, wsClientEmitP } from "../../api/ws"
+import { $orders, isMainOrder } from "../orders"
+import { Iorder } from "../orders/types"
+import { bufferFromHex } from "../../common/functions/bufferFromHex"
 
-// wsClient.on('sendToPairPubKey', )
-// wsClient.on('sendFromPairPubKey', )
+const guardForSetPubKeyForActiveOrder = (
+  source: Event<{hexPubKey: string}>,
+  filter: (info: {isMain: boolean | null}) => boolean,
+  event: Event<{pubKey: Buffer}>
+) => ({
+  source: sample(
+    $activeOrder, source,
+    (activeOrder, {hexPubKey}) => {
+      return {
+        isMain: activeOrder ?
+          !!activeOrder[isMainOrder] : null,
+        pubKey: bufferFromHex(hexPubKey)
+      }
+    }
+  ),
+  filter,
+  target: event
+})
+wsClient.on('sendToPairPubKey', onSendToPairPubKey)
+guard(guardForSetPubKeyForActiveOrder(
+  onSendToPairPubKey,
+  ({isMain}) => isMain === null ? false : isMain,
+  setToPubKeyForActiveOrderEvent
+))
+wsClient.on('sendFromPairPubKey', onSendFromPairPubKey)
+guard(guardForSetPubKeyForActiveOrder(
+  onSendFromPairPubKey,
+  ({isMain}) => isMain === null ? false : !isMain,
+  setFromPubKeyForActiveOrderEvent
+))
+
 wsClient.on('acceptOrder', acceptOrderEvent)
 guard({
   source: sample(
@@ -27,35 +59,42 @@ guard({
 })
 
 sendPubKeyToOrderFx.use(async (sendInfo) => {
-  if(sendInfo) {
-    const {isFrom, ...idOrderAndPubkey} = sendInfo;
-    return wsClientEmitP(
-      sendInfo.isFrom ? 'sendFromPairPubKey' : 'sendToPairPubKey',
-      idOrderAndPubkey
-    )
-  }
-  throw new Error('sendInfo === null(check selectPubkeyForActiveOrderAndSendFx)');
+  const {isMain, ...idOrderAndPubkey} = sendInfo
+  return wsClientEmitP(
+    sendInfo.isMain ? 'sendFromPairPubKey' : 'sendToPairPubKey',
+    idOrderAndPubkey
+  )
 })
-activeOrderFx.use(async (order) => {
+
+activeOrderFx.use(async ({order, userWallets}) => {
   await wsClientEmitP('acceptOrder', order.id)
-  setActiveOrderEvent(order)
+
+  const isMain = !!order[isMainOrder]
+  const userPubKeyForOrder = userWallets[
+    isMain ? order.fromValuePair : order.toValuePair
+  ].ECPair.publicKey
+
+  setActiveOrderEvent({
+    ...order,
+    [isMain ? 'fromPubKey' : 'toPubKey']: userPubKeyForOrder
+  })
+
+  await sendPubKeyToOrderFx({
+    id: order.id,
+    pubkey: userPubKeyForOrder.toString('hex'),
+    isMain
+  })
+
+  return order
 })
-// forward({
-//   from: activeOrderFx.done,
-//   to: attach({
-//     source: {userWallets: $userWallets},
-//     mapParams: () => {},
-//     effect: setFromPubKeyForActiveOrderEvent,
-//   })
-// })
 
 $activeOrder
   .on(setActiveOrderEvent, (_, order) => order)
   .on(
     setToPubKeyForActiveOrderEvent,
-    (order, toPubKey) => order ? ({...order, toPubKey}) : null
+    (order, {pubKey: toPubKey}) => order ? ({...order, toPubKey}) : null
   )
   .on(
     setFromPubKeyForActiveOrderEvent,
-    (order, fromPubKey) => order ? ({...order, fromPubKey}) : null
+    (order, {pubKey: fromPubKey}) => order ? ({...order, fromPubKey}) : null
   )

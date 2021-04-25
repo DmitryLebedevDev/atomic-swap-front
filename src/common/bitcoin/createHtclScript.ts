@@ -1,6 +1,6 @@
 import * as bitcoinjs from 'bitcoinjs-lib'
 
-const OPS = bitcoinjs.script.OPS;
+const OPS = bitcoinjs.script.OPS
 
 export const createHtclScript = (
   secretNum: number,

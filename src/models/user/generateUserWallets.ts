@@ -10,7 +10,7 @@ const createWallet = (network: Network, wif: string | null): Iwallet => {
     })
   const {address} = bitcoinjs.payments.p2pkh(
     {pubkey: ECPair.publicKey, network}
-  );
+  )
   return {
     ECPair,
     address: address as string,
@@ -27,4 +27,4 @@ export const generateUserWallets = ({
 }): IuserWallets => ({
   regnet: createWallet(bitcoinjs.networks.testnet, testnetWif),
   testnet: createWallet(bitcoinjs.networks.regtest, regnetWif)
-});
+})

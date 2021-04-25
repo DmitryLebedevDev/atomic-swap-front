@@ -1,5 +1,5 @@
-import { isMainOrder } from ".";
-import * as Buffer from "buffer";
+import { isMainOrder } from "."
+import * as Buffer from "buffer"
 
 export interface Iorder {
   id: number,

@@ -1,12 +1,12 @@
 import React, { useRef } from 'react'
-import { createOrderFx } from '../../../models/orders';
+import { createOrderFx } from '../../../models/orders'
 import './CreateOrder.scss'
 
 export const CreateOrder = () => {
-  const fromValueRef = useRef<HTMLInputElement|null>(null);
-  const fromValuePairRef = useRef<HTMLSelectElement|null>(null);
-  const toValueRef = useRef<HTMLInputElement|null>(null);
-  const toValuePairRef = useRef<HTMLSelectElement|null>(null);
+  const fromValueRef = useRef<HTMLInputElement|null>(null)
+  const fromValuePairRef = useRef<HTMLSelectElement|null>(null)
+  const toValueRef = useRef<HTMLInputElement|null>(null)
+  const toValuePairRef = useRef<HTMLSelectElement|null>(null)
 
   const createOrderFn = () => {
     fromValueRef.current &&

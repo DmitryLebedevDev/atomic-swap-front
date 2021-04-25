@@ -1,18 +1,18 @@
-import { $orders, addOrderEvent, createOrderFx, deleteOrderEvent, isMainOrder, setOrdersEvent } from ".";
-import { wsClient, wsClientEmitP } from "../../api/ws";
+import { $orders, addOrderEvent, createOrderFx, deleteOrderEvent, isMainOrder, setOrdersEvent } from "."
+import { wsClient, wsClientEmitP } from "../../api/ws"
 
-wsClient.on('openOrders', setOrdersEvent);
-wsClient.on('newOrder', addOrderEvent);
-wsClient.on('deleteOrder', deleteOrderEvent);
+wsClient.on('openOrders', setOrdersEvent)
+wsClient.on('newOrder', addOrderEvent)
+wsClient.on('deleteOrder', deleteOrderEvent)
 
 createOrderFx.use(async (order) => {
-  const id = await wsClientEmitP('newOrder', order);
+  const id = await wsClientEmitP('newOrder', order)
   addOrderEvent({
     id,
     ...order,
     [isMainOrder]: true
-  });
-});
+  })
+})
 
 $orders
   .on(setOrdersEvent, (_, orders) => orders)
