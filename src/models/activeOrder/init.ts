@@ -51,23 +51,30 @@ wsClient.on('acceptOrder', acceptOrderEvent)
 guard({
   source: sample(
     [$orders, $userWallets], acceptOrderEvent,
-    ([orders], acceptedOrderId) => orders.find(
-      ({id}) => id === acceptedOrderId
-    ) as Iorder //check undefined in filter
+    ([orders, userWallets], acceptedOrderId) => {
+      const activeOrder = orders.find(
+        ({id}) => id === acceptedOrderId
+      ) as Iorder
+      activeOrder.fromPubKey = userWallets[activeOrder.fromValuePair].ECPair.publicKey;
+      return {activeOrder}
+    } //check undefined in filter
   ),
-  filter: (order) => {
-    return !!(order && order[isMainOrder])},
-  target: setActiveOrderEvent
+  filter: ({activeOrder}) => {
+    return !!(activeOrder && activeOrder[isMainOrder])},
+  target: acceptActiveOrderAndSendMainPubKeyFx
 })
-acceptActiveOrderAndSendMainPubKeyFx.use(async ({activeOrder, userWallets}) => {
-  await sendPubKeyToOrderFx({
-    id: activeOrder.id,
-    hexPubKey: userWallets[activeOrder.fromValuePair].ECPair.publicKey.toString('hex'),
-    keyType: "from"
-  })
-  setActiveOrderEvent(activeOrder);
+acceptActiveOrderAndSendMainPubKeyFx.use(async ({activeOrder}) => {
+  if(activeOrder.fromPubKey) {
+    await sendPubKeyToOrderFx({
+      id: activeOrder.id,
+      hexPubKey: activeOrder.fromPubKey.toString('hex'),
+      keyType: "from"
+    })
+    setActiveOrderEvent(activeOrder);
 
-  return activeOrder;
+    return activeOrder;
+  }
+  throw new Error('not fromPubKey');
 })
 sendPubKeyToOrderFx.use(async (sendInfo) => {
   const {keyType, ...idOrderAndPubkey} = sendInfo

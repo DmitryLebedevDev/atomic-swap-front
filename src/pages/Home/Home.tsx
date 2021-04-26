@@ -3,6 +3,7 @@ import { ActiveOrdersList } from './ActiveOrdersList/ActiveOrdersList'
 import { CreateOrder } from './CreateOrder/CreateOrder'
 import { CurrentOrder } from './CurrentOrder/CurrentOrder'
 import './Home.scss'
+import {UserWalletsInfo} from "./UserWalletsInfo/UserWalletsInfo";
 
 export const Home = () => {
   return (
@@ -10,6 +11,7 @@ export const Home = () => {
       <ActiveOrdersList/>
       <CreateOrder/>
       <CurrentOrder/>
+      <UserWalletsInfo/>
     </div>
   )
 }

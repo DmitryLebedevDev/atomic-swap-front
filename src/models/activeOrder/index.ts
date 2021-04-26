@@ -16,7 +16,7 @@ export const acceptOrderEvent = createEvent<number>()
 
 export const sendPubKeyToOrderFx = createEffect<IemitPubKeyToOrder, void>()
 export const acceptActiveOrderAndSendMainPubKeyFx = createEffect<
-  {activeOrder: Iorder, userWallets: IuserWallets}, Iorder
+  {activeOrder: Iorder}, Iorder
 >()
 export const onActiveOrderFx = createEffect()
 export const activeOrderFx = createEffect<

@@ -12,7 +12,7 @@ export const CurrentOrder = memo(() => {
       <div>
         <div className="currentOrder">
           {currentOrder.fromValue}/{currentOrder.fromValuePair}
-          &nbsp|&nbsp
+          {` `}|{` `}
           {currentOrder.toValue}/{currentOrder.toValuePair}
         </div>
         <div>
