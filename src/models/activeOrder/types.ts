@@ -1,5 +1,5 @@
 export interface IemitPubKeyToOrder {
   id: number,
-  pubkey: string,
-  isMain: boolean
+  hexPubKey: string,
+  keyType: 'from' | 'to'
 }

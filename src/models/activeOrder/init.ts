@@ -1,6 +1,6 @@
 import {Event, guard, sample} from "effector"
 import {
-  $activeOrder,
+  $activeOrder, acceptActiveOrderAndSendMainPubKeyFx,
   acceptOrderEvent,
   activeOrderFx,
   onSendFromPairPubKey,
@@ -14,6 +14,7 @@ import { wsClient, wsClientEmitP } from "../../api/ws"
 import { $orders, isMainOrder } from "../orders"
 import { Iorder } from "../orders/types"
 import { bufferFromHex } from "../../common/functions/bufferFromHex"
+import {$userWallets} from "../user";
 
 const guardForSetPubKeyForActiveOrder = (
   source: Event<{hexPubKey: string}>,
@@ -49,7 +50,8 @@ guard(guardForSetPubKeyForActiveOrder(
 wsClient.on('acceptOrder', acceptOrderEvent)
 guard({
   source: sample(
-    $orders, acceptOrderEvent, (orders, acceptedOrderId) => orders.find(
+    [$orders, $userWallets], acceptOrderEvent,
+    ([orders], acceptedOrderId) => orders.find(
       ({id}) => id === acceptedOrderId
     ) as Iorder //check undefined in filter
   ),
@@ -57,11 +59,20 @@ guard({
     return !!(order && order[isMainOrder])},
   target: setActiveOrderEvent
 })
+acceptActiveOrderAndSendMainPubKeyFx.use(async ({activeOrder, userWallets}) => {
+  await sendPubKeyToOrderFx({
+    id: activeOrder.id,
+    hexPubKey: userWallets[activeOrder.fromValuePair].ECPair.publicKey.toString('hex'),
+    keyType: "from"
+  })
+  setActiveOrderEvent(activeOrder);
 
+  return activeOrder;
+})
 sendPubKeyToOrderFx.use(async (sendInfo) => {
-  const {isMain, ...idOrderAndPubkey} = sendInfo
+  const {keyType, ...idOrderAndPubkey} = sendInfo
   return wsClientEmitP(
-    sendInfo.isMain ? 'sendFromPairPubKey' : 'sendToPairPubKey',
+    keyType === 'from' ? 'sendFromPairPubKey' : 'sendToPairPubKey',
     idOrderAndPubkey
   )
 })
@@ -81,8 +92,8 @@ activeOrderFx.use(async ({order, userWallets}) => {
 
   await sendPubKeyToOrderFx({
     id: order.id,
-    pubkey: userPubKeyForOrder.toString('hex'),
-    isMain
+    hexPubKey: userPubKeyForOrder.toString('hex'),
+    keyType: isMain ? 'from' : 'to'
   })
 
   return order

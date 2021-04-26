@@ -9,11 +9,21 @@ export const CurrentOrder = memo(() => {
 
   return (
     currentOrder !== null ?
-    <div className="currentOrder">
-      {currentOrder.fromValue}/{currentOrder.fromValuePair}
-      &nbsp|&nbsp
-      {currentOrder.toValue}/{currentOrder.toValuePair}
-    </div>
+      <div>
+        <div className="currentOrder">
+          {currentOrder.fromValue}/{currentOrder.fromValuePair}
+          &nbsp|&nbsp
+          {currentOrder.toValue}/{currentOrder.toValuePair}
+        </div>
+        <div>
+          <div>
+            from pubkey {currentOrder.fromPubKey?.toString('hex') ?? 'not set'}
+          </div>
+          <div>
+            to pubkey {currentOrder.toPubKey?.toString('hex') ?? 'not set'}
+          </div>
+        </div>
+      </div>
     :
     <></>
   )

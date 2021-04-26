@@ -15,6 +15,10 @@ export const setToPubKeyForActiveOrderEvent = createEvent<{pubKey: Buffer}>()
 export const acceptOrderEvent = createEvent<number>()
 
 export const sendPubKeyToOrderFx = createEffect<IemitPubKeyToOrder, void>()
+export const acceptActiveOrderAndSendMainPubKeyFx = createEffect<
+  {activeOrder: Iorder, userWallets: IuserWallets}, Iorder
+>()
+export const onActiveOrderFx = createEffect()
 export const activeOrderFx = createEffect<
   {order: Iorder, userWallets: IuserWallets}, Iorder
 >()
