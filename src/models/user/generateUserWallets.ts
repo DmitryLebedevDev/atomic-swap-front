@@ -4,7 +4,7 @@ import {Network} from "bitcoinjs-lib"
 
 const createWallet = (network: Network, wif: string | null): Iwallet => {
   const ECPair = wif ?
-    bitcoinjs.ECPair.fromWIF(wif) :
+    bitcoinjs.ECPair.fromWIF(wif, network) :
     bitcoinjs.ECPair.makeRandom({
       network
     })
