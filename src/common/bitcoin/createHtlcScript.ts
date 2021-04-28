@@ -1,8 +1,15 @@
 import * as bitcoinjs from 'bitcoinjs-lib'
 
-const OPS = bitcoinjs.script.OPS
+const OPS = bitcoinjs.script.OPS;
 
-export const createHtclScript = (
+export enum HtclCodesIndex {
+  secretNum = 1,
+  acceptor = 4,
+  lockTime= 7,
+  creator = 10
+}
+
+export const createHtlcScript = (
   secretNum: number,
   lockTime: number,
   acceptorPubKey: Buffer,

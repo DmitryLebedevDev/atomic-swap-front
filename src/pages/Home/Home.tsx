@@ -4,6 +4,9 @@ import { CreateOrder } from './CreateOrder/CreateOrder'
 import { CurrentOrder } from './CurrentOrder/CurrentOrder'
 import './Home.scss'
 import {UserWalletsInfo} from "./UserWalletsInfo/UserWalletsInfo";
+import * as bt from "bitcoinjs-lib";
+
+(window as any).bt = bt;
 
 export const Home = () => {
   return (
