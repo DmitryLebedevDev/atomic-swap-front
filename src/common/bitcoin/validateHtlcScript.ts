@@ -6,6 +6,7 @@ export const validateHtlcScript = (
   contract: string | Buffer,
   secretNum: number,
   lockTime: number,
+  lockTimeMiss: number,
   mainPubKey: Buffer
 ) => {
   const decodeContract = bitcoinjs.script.decompile(
@@ -14,15 +15,22 @@ export const validateHtlcScript = (
       :
       contract
   )
+  const decodeContractLockTime
+    = decodeContract && decodeContract[HtclCodesIndex.lockTime]
   const decodeExpectedContract = bitcoinjs.script.decompile(
     createHtlcScript(secretNum, lockTime, mainPubKey, new Buffer(0))
   )
-  if(decodeContract &&
-     decodeExpectedContract &&
+  if(
      decodeContract instanceof Buffer &&
-     decodeExpectedContract instanceof Buffer
+     decodeExpectedContract instanceof Buffer &&
+     decodeContractLockTime instanceof Buffer &&
+     (Math.abs(
+       lockTime - bitcoinjs.script.number.decode(decodeContractLockTime)
+     ) < lockTimeMiss)
   ) {
     decodeContract[HtclCodesIndex.creator] = 0;
+    decodeContract[HtclCodesIndex.lockTime] = 0;
+    decodeExpectedContract[HtclCodesIndex.creator] = 0;
     decodeExpectedContract[HtclCodesIndex.lockTime] = 0;
     return decodeContract.equals(decodeExpectedContract);
   }
