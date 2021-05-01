@@ -1,10 +1,11 @@
 import * as bitcoinjs from 'bitcoinjs-lib'
 import {bufferFromHex} from "../functions/bufferFromHex";
 import {createHtlcScript, HtclCodesIndex} from "./createHtlcScript";
+import {isArray} from "util";
 
 export const validateHtlcScript = (
   contract: string | Buffer,
-  secretNum: number,
+  secretNum: number | null,
   lockTime: number,
   lockTimeMiss: number,
   mainPubKey: Buffer
@@ -18,22 +19,33 @@ export const validateHtlcScript = (
   const decodeContractLockTime
     = decodeContract && decodeContract[HtclCodesIndex.lockTime]
   const decodeExpectedContract = bitcoinjs.script.decompile(
-    createHtlcScript(secretNum, lockTime, mainPubKey, new Buffer(0))
+    createHtlcScript(
+      secretNum ?? 0,
+      lockTime,
+      mainPubKey,
+      new Buffer(0)
+    )
   )
   if(
-     decodeContract instanceof Buffer &&
-     decodeExpectedContract instanceof Buffer &&
+     Array.isArray(decodeContract) &&
+     Array.isArray(decodeExpectedContract) &&
      decodeContractLockTime instanceof Buffer &&
      (Math.abs(
        lockTime - bitcoinjs.script.number.decode(decodeContractLockTime)
-     ) < lockTimeMiss)
+     ) <= lockTimeMiss)
   ) {
+    if(secretNum === null) {
+      decodeContract[HtclCodesIndex.secretNum] = 0;
+      decodeExpectedContract[HtclCodesIndex.secretNum] = 0;
+    }
     decodeContract[HtclCodesIndex.creator] = 0;
     decodeContract[HtclCodesIndex.lockTime] = 0;
     decodeExpectedContract[HtclCodesIndex.creator] = 0;
     decodeExpectedContract[HtclCodesIndex.lockTime] = 0;
 
-    return decodeContract.equals(decodeExpectedContract);
+    return (bitcoinjs.script.compile(decodeContract).equals(
+      bitcoinjs.script.compile(decodeExpectedContract)
+    ));
   }
 
   return false;
