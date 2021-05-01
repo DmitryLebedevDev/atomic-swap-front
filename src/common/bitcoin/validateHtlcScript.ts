@@ -32,7 +32,9 @@ export const validateHtlcScript = (
     decodeContract[HtclCodesIndex.lockTime] = 0;
     decodeExpectedContract[HtclCodesIndex.creator] = 0;
     decodeExpectedContract[HtclCodesIndex.lockTime] = 0;
+
     return decodeContract.equals(decodeExpectedContract);
   }
+
   return false;
 }

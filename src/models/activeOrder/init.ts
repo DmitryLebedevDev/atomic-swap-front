@@ -15,6 +15,9 @@ import { $orders, isMainOrder } from "../orders"
 import { Iorder } from "../orders/types"
 import { bufferFromHex } from "../../common/functions/bufferFromHex"
 import {$userWallets} from "../user";
+import * as bitcoinjs from 'bitcoinjs-lib';
+import {createHtlcScript} from "../../common/bitcoin/createHtlcScript";
+import {txIdToHash} from "../../common/bitcoin/txIdToHash";
 
 const guardForSetPubKeyForActiveOrder = (
   source: Event<{hexPubKey: string}>,
@@ -54,9 +57,12 @@ guard({
     ([orders, userWallets], acceptedOrderId) => {
       const activeOrder = orders.find(
         ({id}) => id === acceptedOrderId
-      ) as Iorder
-      activeOrder.fromPubKey = userWallets[activeOrder.fromValuePair].ECPair.publicKey;
-      return {activeOrder}
+      )
+      if(activeOrder) {
+        activeOrder.fromPubKey = userWallets[activeOrder.fromValuePair].ECPair.publicKey;
+      }
+
+      return {activeOrder: activeOrder as Iorder}
     } //check undefined in filter
   ),
   filter: ({activeOrder}) => {
@@ -87,20 +93,19 @@ sendPubKeyToOrderFx.use(async (sendInfo) => {
 activeOrderFx.use(async ({order, userWallets}) => {
   await wsClientEmitP('acceptOrder', order.id)
 
-  const isMain = !!order[isMainOrder]
-  const userPubKeyForOrder = userWallets[
-    isMain ? order.fromValuePair : order.toValuePair
-  ].ECPair.publicKey
+  const userPubKeyForOrder = userWallets[order.toValuePair].ECPair.publicKey;
 
-  setActiveOrderEvent({
+  const activeOrder = {
     ...order,
-    [isMain ? 'fromPubKey' : 'toPubKey']: userPubKeyForOrder
-  })
+    toPubKey: userPubKeyForOrder
+  }
+
+  setActiveOrderEvent(activeOrder)
 
   await sendPubKeyToOrderFx({
     id: order.id,
     hexPubKey: userPubKeyForOrder.toString('hex'),
-    keyType: isMain ? 'from' : 'to'
+    keyType: 'to'
   })
 
   return order
