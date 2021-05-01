@@ -1,4 +1,4 @@
-import {Event, guard, sample} from "effector"
+import { attach, Effect, Event, guard, sample } from "effector";
 import {
   $activeOrder, acceptActiveOrderAndSendMainPubKeyFx,
   acceptOrderEvent,
@@ -18,11 +18,12 @@ import {$userWallets} from "../user";
 import * as bitcoinjs from 'bitcoinjs-lib';
 import {createHtlcScript} from "../../common/bitcoin/createHtlcScript";
 import {txIdToHash} from "../../common/bitcoin/txIdToHash";
+import { createEffect } from "effector/effector.cjs";
 
 const guardForSetPubKeyForActiveOrder = (
   source: Event<{hexPubKey: string}>,
   filter: (info: {isMain: boolean | null}) => boolean,
-  event: Event<{pubKey: Buffer}>
+  event: Event<{pubKey: Buffer}> | Effect<{pubKey: Buffer}, any>
 ) => ({
   source: sample(
     $activeOrder, source,
@@ -47,7 +48,16 @@ wsClient.on('sendFromPairPubKey', onSendFromPairPubKey)
 guard(guardForSetPubKeyForActiveOrder(
   onSendFromPairPubKey,
   ({isMain}) => isMain === null ? false : !isMain,
-  setFromPubKeyForActiveOrderEvent
+  attach({
+    source: {
+      activeOrder: $activeOrder,
+      userWallets: $userWallets
+    },
+    mapParams: (a) => {return a},
+    effect: createEffect<{pubKey: Buffer}, any>(({pubKey}) => {
+      setFromPubKeyForActiveOrderEvent({pubKey});
+    }),
+  })
 ))
 
 wsClient.on('acceptOrder', acceptOrderEvent)
@@ -90,6 +100,8 @@ sendPubKeyToOrderFx.use(async (sendInfo) => {
   )
 })
 
+wsClient.on('sendFromPairHTLC', () => {});
+wsClient.on('sendToPairHTLC', () => {});
 activeOrderFx.use(async ({order, userWallets}) => {
   await wsClientEmitP('acceptOrder', order.id)
 
