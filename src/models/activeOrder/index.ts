@@ -4,6 +4,7 @@ import {IemitPubKeyToOrder} from "./types"
 import {attach} from "effector/effector.cjs"
 import {$userWallets} from "../user"
 import {IuserWallets} from "../user/types"
+import { $orders } from "../orders";
 
 export const $activeOrder = createStore<Iorder|null>(null)
 
@@ -12,15 +13,26 @@ export const onSendToPairPubKey = createEvent<{hexPubKey: string}>()
 export const onSendFromPairPubKey = createEvent<{hexPubKey: string}>()
 export const setFromPubKeyForActiveOrderEvent = createEvent<{pubKey: Buffer}>()
 export const setToPubKeyForActiveOrderEvent = createEvent<{pubKey: Buffer}>()
-export const acceptOrderEvent = createEvent<number>()
 
 export const sendPubKeyToOrderFx = createEffect<IemitPubKeyToOrder, void>()
-export const acceptActiveOrderAndSendMainPubKeyFx = createEffect<
-  {activeOrder: Iorder}, Iorder
+
+export const startAcceptedOrderFx = createEffect<
+  {acceptedOrderId: number, orders: Iorder[], userWallets: IuserWallets}, void
 >()
-export const onActiveOrderFx = createEffect()
+export const onActiveOrderFx = attach({
+  source: {
+    orders: $orders,
+    userWallets: $userWallets,
+  },
+  mapParams: (acceptedOrderId: number, {orders, userWallets}) => ({
+    acceptedOrderId,
+    orders,
+    userWallets
+  }),
+  effect: startAcceptedOrderFx
+})
 export const activeOrderFx = createEffect<
-  {order: Iorder, userWallets: IuserWallets}, Iorder
+  {order: Iorder, userWallets: IuserWallets}, void
 >()
 export const selectOrderForActiveFx = attach({
   source: $userWallets,
