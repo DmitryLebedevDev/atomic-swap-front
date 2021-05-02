@@ -20,6 +20,11 @@ export const wsClientOnP = <T,Y>(
   handleData: (data: T) => Y
 ) => (
   new Promise<Y>((res) => {
-    wsClient.on(event, (data: T) => res(handleData(data)));
+    const onFn = (data: T) => {
+      wsClient.off('event', onFn);
+
+      return res(handleData(data));
+    };
+    wsClient.on(event, onFn);
   })
 )
