@@ -1,7 +1,7 @@
 import openSocket from 'socket.io-client'
 import { WsStatus } from './types'
 
-export const wsClient = openSocket('http://localhost:3113')
+export const wsClient = openSocket(process.env.REACT_APP_BACK_URL as string)
 export const wsClientEmitP:(event: string, value: any) => Promise<any> = (
   event, value
 ) => (
