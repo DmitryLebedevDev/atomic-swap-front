@@ -25,6 +25,6 @@ export const generateUserWallets = ({
   testnetWif: string | null,
   regnetWif: string | null
 }): IuserWallets => ({
-  regnet: createWallet(bitcoinjs.networks.testnet, testnetWif),
-  testnet: createWallet(bitcoinjs.networks.regtest, regnetWif)
+  regnet: createWallet(bitcoinjs.networks.testnet, regnetWif),
+  testnet: createWallet(bitcoinjs.networks.regtest, testnetWif)
 })
