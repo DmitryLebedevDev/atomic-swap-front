@@ -41,7 +41,7 @@ startAcceptedOrderFx.use(
     if(!acceptedOrder) {throw new Error('not find main order')}
 
     const fromPubKey
-      = userWallets[acceptedOrder.fromValuePair]
+      = userWallets[acceptedOrder.toValuePair]
           .ECPair
           .publicKey
     const toPubKey
@@ -70,9 +70,9 @@ activeOrderFx.use(async ({order, userWallets}) => {
   await wsClientEmitP('acceptOrder', order.id)
 
   const toPubKey
-    = userWallets[order.toValuePair]
-        .ECPair
-        .publicKey;
+    = userWallets[order.fromValuePair]
+      .ECPair
+      .publicKey;
   order.toPubKey = toPubKey;
   setActiveOrderEvent({...order});
 

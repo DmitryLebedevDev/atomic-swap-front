@@ -25,8 +25,8 @@ export const CreateOrder = () => {
     <div className="createOrder">
       <div className="createOrderPairs">
         <select ref={fromValuePairRef}>
-          <option value="testnet">testnet</option>
           <option value="regnet">regnet</option>
+          <option value="testnet">testnet</option>
         </select>
         <select ref={toValuePairRef}>
           <option value="regnet">regnet</option>
