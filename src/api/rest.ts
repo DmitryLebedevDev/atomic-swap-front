@@ -5,8 +5,9 @@ import {
   IResStatus,
   IunspentTransaction,
   IunspentTransactionsRes
-} from "../../../wallet/src/api/api.interface";
-import { IgetTransactionReq } from "./types";
+} from "./types";
+import {IgetTransactionReq, IrequestResponse, Ivin} from "./types";
+
 
 export const regnetApi = axios.create({
   baseURL: process.env.REACT_REGNET_URL
@@ -20,7 +21,14 @@ const getApi = (networkType: IuserNetworkKeys) => {
     case "testnet": return testnetApi;
   }
 }
-
+export const getVinForUtxoTransactionReq
+  = (networkType: IuserNetworkKeys, txid: string, n: number) => (
+    getApi(networkType).get<
+      IrequestResponse<{vin: Ivin}, {message: string}>
+    >
+    (`/getVinForUtxoTransaction/${txid}?n=${n}`)
+    .then(({data}) => data)
+  )
 export const getAddressBalanceReq
   = (networkType: IuserNetworkKeys, address: string) => (
     getApi(networkType).get<IaddressInfoRes>(
@@ -35,7 +43,7 @@ export const getAddressBalanceReq
     )
   )
 export const getUnspentTransactionsReq
-  = (networkType: IuserNetworkKeys, address: number) => (
+  = (networkType: IuserNetworkKeys, address: string) => (
     getApi(networkType).get<IunspentTransactionsRes>(
       `address/${address}/unspent`
     ).then<IunspentTransaction[]>(({

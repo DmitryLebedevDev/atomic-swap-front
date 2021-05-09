@@ -20,6 +20,7 @@ import {createHtlcScript} from "../../common/bitcoin/createHtlcScript";
 import {txIdToHash} from "../../common/bitcoin/txIdToHash";
 import { createEffect } from "effector/effector.cjs";
 import { IemitPubKeyToOrder } from "./types";
+import {createHtlcContract} from "../../common/bitcoin/createHtlcContract";
 
 wsClient.on('sendToPairPubKey', onSendToPairPubKey)
 wsClient.on('sendFromPairPubKey', onSendFromPairPubKey)
@@ -91,6 +92,15 @@ activeOrderFx.use(async ({order, userWallets}) => {
     )
   order.fromPubKey = fromPubKey;
   setFromPubKeyForActiveOrderEvent({pubKey: fromPubKey});
+
+  console.log(await createHtlcContract(
+    order.fromValuePair,
+    userWallets[order.fromValuePair].ECPair,
+    fromPubKey,
+    order.fromValue,
+    1,
+    123
+  ))
 })
 
 $activeOrder
