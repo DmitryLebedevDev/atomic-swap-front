@@ -5,8 +5,6 @@ import { $activeOrder } from '../../../models/activeOrder/index'
 export const CurrentOrder = memo(() => {
   const currentOrder = useStore($activeOrder)
 
-  console.log(currentOrder)
-
   return (
     currentOrder !== null ?
       <div>

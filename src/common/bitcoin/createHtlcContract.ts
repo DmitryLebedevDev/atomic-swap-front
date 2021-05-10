@@ -16,13 +16,14 @@ export const createHtlcContract = async (
   lockTime: number,
 ) => {
   const creatorAddress: string = bitcoinjs.payments.p2pkh({
-    pubkey: ECPair.privateKey,
+    pubkey: ECPair.publicKey,
     network: ECPair.network
   }).address as string
   const listUnspent = await getUnspentTransactionsReq(
     network,
     creatorAddress
   )
+  console.log(listUnspent)
   const allUnsprent = listUnspent.reduce(
     (sum, {value}) => sum + value, 0
   )

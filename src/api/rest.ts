@@ -10,10 +10,10 @@ import {IgetTransactionReq, IrequestResponse, Ivin} from "./types";
 
 
 export const regnetApi = axios.create({
-  baseURL: process.env.REACT_REGNET_URL
+  baseURL: process.env.REACT_APP_REGNET_URL
 })
 export const testnetApi = axios.create({
-  baseURL: process.env.REACT_TESTNET_URL
+  baseURL: process.env.REACT_APP_TESTNET_URL
 })
 const getApi = (networkType: IuserNetworkKeys) => {
   switch (networkType) {

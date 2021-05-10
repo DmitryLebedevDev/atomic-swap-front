@@ -21,6 +21,9 @@ import {txIdToHash} from "../../common/bitcoin/txIdToHash";
 import { createEffect } from "effector/effector.cjs";
 import { IemitPubKeyToOrder } from "./types";
 import {createHtlcContract} from "../../common/bitcoin/createHtlcContract";
+import {dateToUtcDate} from "../../common/functions/dateToUtcDate";
+// @ts-ignore
+import * as bip65 from 'bip65'
 
 wsClient.on('sendToPairPubKey', onSendToPairPubKey)
 wsClient.on('sendFromPairPubKey', onSendFromPairPubKey)
@@ -93,15 +96,24 @@ activeOrderFx.use(async ({order, userWallets}) => {
   order.fromPubKey = fromPubKey;
   setFromPubKeyForActiveOrderEvent({pubKey: fromPubKey});
 
-  console.log(await createHtlcContract(
-    order.fromValuePair,
-    userWallets[order.fromValuePair].ECPair,
-    fromPubKey,
-    order.fromValue,
-    1,
-    123
-  ))
+  const dateNowSec = +dateToUtcDate(new Date()) / 1000 ^ 0
+  const secretNum = window.crypto.getRandomValues(new Uint32Array(1))[0];
+  try {
+    const hash = await createHtlcContract(
+      order.toValuePair,
+      userWallets[order.toValuePair].ECPair,
+      fromPubKey,
+      order.toValue,
+      secretNum,
+      bip65.encode({utc: dateNowSec+60*120})
+    )
+    console.log('test');
+    console.log(hash);
+  } catch (e) {
+    console.log(e);
+  }
 })
+startAcceptedOrderFx.failData.watch((data) => console.log(data));
 
 $activeOrder
   .on(setActiveOrderEvent, (_, order) => order)
