@@ -3,7 +3,7 @@ import {
   activeOrderFx,
   onActiveOrderFx,
   onSendFromPairPubKey,
-  onSendToPairPubKey,
+  onSendToPairPubKey, sendHtlcToOrderFx,
   sendPubKeyToOrderFx,
   setActiveOrderEvent,
   setFromPubKeyForActiveOrderEvent,
@@ -24,6 +24,7 @@ import {createHtlcContract} from "../../common/bitcoin/createHtlcContract";
 import {dateToUtcDate} from "../../common/functions/dateToUtcDate";
 // @ts-ignore
 import * as bip65 from 'bip65'
+import {sendTransactionReq} from "../../api/rest";
 
 wsClient.on('sendToPairPubKey', onSendToPairPubKey)
 wsClient.on('sendFromPairPubKey', onSendFromPairPubKey)
@@ -33,6 +34,13 @@ sendPubKeyToOrderFx.use(async (sendInfo) => {
   return wsClientEmitP(
     keyType === 'from' ? 'sendFromPairPubKey' : 'sendToPairPubKey',
     idOrderAndPubkey
+  )
+})
+sendHtlcToOrderFx.use(async (sendInfo) => {
+  const {htlcType, ...htlcInfo} = sendInfo;
+  return wsClientEmitP(
+    htlcType === 'from' ? 'sendFromPairHTLC' : 'sendToPairHTLC',
+    htlcInfo
   )
 })
 
@@ -98,20 +106,25 @@ activeOrderFx.use(async ({order, userWallets}) => {
 
   const dateNowSec = +dateToUtcDate(new Date()) / 1000 ^ 0
   const secretNum = window.crypto.getRandomValues(new Uint32Array(1))[0];
-  try {
-    const hash = await createHtlcContract(
+  const pushTransactionInfo
+    = await sendTransactionReq(
       order.toValuePair,
-      userWallets[order.toValuePair].ECPair,
-      fromPubKey,
-      order.toValue,
-      secretNum,
-      bip65.encode({utc: dateNowSec+60*120})
+      await createHtlcContract(
+        order.toValuePair,
+        userWallets[order.toValuePair].ECPair,
+        fromPubKey,
+        order.toValue,
+        secretNum,
+        bip65.encode({utc: dateNowSec+60*120})
+      )
     )
-    console.log('test');
-    console.log(hash);
-  } catch (e) {
-    console.log(e);
-  }
+  if(!pushTransactionInfo.success) {throw new Error(pushTransactionInfo.message)}
+  await sendHtlcToOrderFx({
+    id: order.id,
+    txid: pushTransactionInfo.txid,
+    redeem: 'fix',
+    htlcType: 'from'
+  })
 })
 startAcceptedOrderFx.failData.watch((data) => console.log(data));
 

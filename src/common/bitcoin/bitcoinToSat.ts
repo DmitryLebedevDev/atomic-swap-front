@@ -1,3 +1,5 @@
-export const bitcoinToSat = (value: number) => (
-  value * 100000000 ^ 0
-)
+export const bitcoinToSat = (value: number) => {
+  return (
+    Math.floor(value * 100000000)
+  )
+}

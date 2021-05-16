@@ -6,6 +6,9 @@ import './api/ws'
 import './models/init'
 import 'antd/dist/antd.css'
 import './App.css'
+import {bitcoinToSat} from "./common/bitcoin/bitcoinToSat";
+
+(window as any).bitcoinToSat = bitcoinToSat
 
 function App() {
   return (

@@ -3,3 +3,9 @@ export interface IemitPubKeyToOrder {
   hexPubKey: string,
   keyType: 'from' | 'to'
 }
+export interface IemitHtlcToOrder {
+  id: number,
+  txid: string,
+  redeem: string,
+  htlcType: 'from' | 'to'
+}

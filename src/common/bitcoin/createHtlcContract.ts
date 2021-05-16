@@ -23,10 +23,16 @@ export const createHtlcContract = async (
     network,
     creatorAddress
   )
-  console.log(listUnspent)
   const allUnsprent = listUnspent.reduce(
     (sum, {value}) => sum + value, 0
   )
+  // console.log(
+  //   listUnspent,
+  //   allUnsprent,
+  //   bitcoinToSat(1),
+  //   bitcoinToSat(allUnsprent),
+  //   bitcoinToSat(allUnsprent - value - 0.00001)
+  // )
   const tx = new bitcoinjs.Transaction();
   listUnspent.forEach(({txid, n}) => {
     tx.addInput(txIdToHash(txid), n)

@@ -1,6 +1,6 @@
 import {createEffect, createEvent, createStore} from "effector"
 import { Iorder } from "../orders/types"
-import {IemitPubKeyToOrder} from "./types"
+import {IemitHtlcToOrder, IemitPubKeyToOrder} from "./types"
 import {attach} from "effector/effector.cjs"
 import {$userWallets} from "../user"
 import {IuserWallets} from "../user/types"
@@ -15,6 +15,7 @@ export const setFromPubKeyForActiveOrderEvent = createEvent<{pubKey: Buffer}>()
 export const setToPubKeyForActiveOrderEvent = createEvent<{pubKey: Buffer}>()
 
 export const sendPubKeyToOrderFx = createEffect<IemitPubKeyToOrder, void>()
+export const sendHtlcToOrderFx = createEffect<IemitHtlcToOrder, void>()
 
 export const startAcceptedOrderFx = createEffect<
   {acceptedOrderId: number, orders: Iorder[], userWallets: IuserWallets}, void

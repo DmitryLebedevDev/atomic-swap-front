@@ -55,10 +55,12 @@ export const getUnspentTransactionsReq
   )
 export const sendTransactionReq
   = (networkType: IuserNetworkKeys, hex: string) => (
-    getApi(networkType).post<IResStatus>(
+    getApi(networkType).post<
+      IrequestResponse<{txid: string}, {message: string}>
+    >(
       `/pushtx`,
       {hex}
-    )
+    ).then(({data}) => data)
   )
 export const getTransactionReq
   = (networkType: IuserNetworkKeys, txId: string) => (
