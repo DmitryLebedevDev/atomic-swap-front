@@ -19,12 +19,14 @@ import * as bitcoinjs from 'bitcoinjs-lib';
 import {createHtlcScript} from "../../common/bitcoin/createHtlcScript";
 import {txIdToHash} from "../../common/bitcoin/txIdToHash";
 import { createEffect } from "effector/effector.cjs";
-import { IemitPubKeyToOrder } from "./types";
+import {IemitHtlcToOrder, IemitPubKeyToOrder} from "./types";
 import {createHtlcContract} from "../../common/bitcoin/createHtlcContract";
 import {dateToUtcDate} from "../../common/functions/dateToUtcDate";
 // @ts-ignore
 import * as bip65 from 'bip65'
-import {sendTransactionReq} from "../../api/rest";
+import {getTransactionReq, sendTransactionReq} from "../../api/rest";
+import {validateP2shVoutScriptHash} from "../../common/bitcoin/validateP2shVoutScriptHash";
+import {validateHtlcScript} from "../../common/bitcoin/validateHtlcScript";
 
 wsClient.on('sendToPairPubKey', onSendToPairPubKey)
 wsClient.on('sendFromPairPubKey', onSendFromPairPubKey)
@@ -75,6 +77,35 @@ startAcceptedOrderFx.use(
       hexPubKey: fromPubKey.toString('hex'),
       keyType: 'from'
     })
+
+    const {txid, redeem}
+      = await wsClientOnP(
+        'sendFromPairHTLC',
+      (htlcForFromInfo: Omit<IemitHtlcToOrder, 'htlcType'>) => {
+        console.log(htlcForFromInfo)
+        return {
+          ...htlcForFromInfo,
+          redeem: bufferFromHex(htlcForFromInfo.redeem)
+        }
+      })
+
+    const transaction
+      = await getTransactionReq(acceptedOrder.fromValuePair, txid)
+    if(
+      !validateP2shVoutScriptHash(transaction?.vout[0], redeem) &&
+      !validateHtlcScript(
+        redeem,
+        null,
+        bip65({
+          utc: (+dateToUtcDate(new Date())+(60*120))/1000^0
+        }),
+        60,
+        fromPubKey
+      )
+    ) {
+      throw new Error('incorrect hash script transaction vout')
+    }
+    console.log('ok')
   }
 )
 
@@ -106,23 +137,28 @@ activeOrderFx.use(async ({order, userWallets}) => {
 
   const dateNowSec = +dateToUtcDate(new Date()) / 1000 ^ 0
   const secretNum = window.crypto.getRandomValues(new Uint32Array(1))[0];
+
+  const htlcForFrom
+    = await createHtlcContract(
+    order.toValuePair,
+    userWallets[order.toValuePair].ECPair,
+    fromPubKey,
+    order.toValue,
+    secretNum,
+    bip65.encode({utc: dateNowSec+60*120})
+  )
+  console.log(htlcForFrom)
   const pushTransactionInfo
     = await sendTransactionReq(
       order.toValuePair,
-      await createHtlcContract(
-        order.toValuePair,
-        userWallets[order.toValuePair].ECPair,
-        fromPubKey,
-        order.toValue,
-        secretNum,
-        bip65.encode({utc: dateNowSec+60*120})
-      )
+      htlcForFrom.hex
     )
+
   if(!pushTransactionInfo.success) {throw new Error(pushTransactionInfo.message)}
   await sendHtlcToOrderFx({
     id: order.id,
     txid: pushTransactionInfo.txid,
-    redeem: 'fix',
+    redeem: htlcForFrom.redeem.toString('hex'),
     htlcType: 'from'
   })
 })

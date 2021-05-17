@@ -2,11 +2,12 @@ import axios from "axios";
 import { IuserNetworkKeys } from "../models/user/types";
 import {
   IaddressInfoRes,
-  IResStatus,
+  IResStatus, Itransaction,
   IunspentTransaction,
   IunspentTransactionsRes
 } from "./types";
 import {IgetTransactionReq, IrequestResponse, Ivin} from "./types";
+import {networks} from "bitcoinjs-lib";
 
 
 export const regnetApi = axios.create({
@@ -64,8 +65,10 @@ export const sendTransactionReq
   )
 export const getTransactionReq
   = (networkType: IuserNetworkKeys, txId: string) => (
-    getApi(networkType).get<IgetTransactionReq>(`tx/${txId}`)
-    .then(({data: {success, transaction}}) => {
-      return success ? transaction : Promise.reject()
+    getApi(networkType).get<
+      IrequestResponse<{transaction: Itransaction}, {message: string}>
+    >(`/tx/${txId}`)
+    .then(({data: info}) => {
+      return info.success ? info.transaction : Promise.reject()
     })
   )

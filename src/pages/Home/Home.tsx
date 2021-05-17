@@ -5,8 +5,10 @@ import { CurrentOrder } from './CurrentOrder/CurrentOrder'
 import './Home.scss'
 import {UserWalletsInfo} from "./UserWalletsInfo/UserWalletsInfo";
 import * as bt from "bitcoinjs-lib";
+import {bufferFromHex} from "../../common/functions/bufferFromHex";
 
 (window as any).bt = bt;
+(window as any).bufferFromHex = bufferFromHex
 
 export const Home = () => {
 

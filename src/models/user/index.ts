@@ -11,34 +11,34 @@ export const $userWallets = createStore<IuserWallets>(
 )
 
 $userWallets.watch((info) => {
-  // TODO: p2sh test code
-  // const tx = new bitcoinjs.Transaction();
-  // tx.addInput(
-  //   txIdToHash("5e2e3c10aa81e82a37b3c1e054d2731a079f1cf08f9e1e4abf8e634ce8982af9"), 0
-  // )
-  // tx.addOutput(
-  //   bitcoinjs.payments.p2sh({
-  //     redeem: {
-  //       output: bitcoinjs.script.compile([
-  //         bitcoinjs.script.OPS.OP_1,
-  //         bitcoinjs.script.OPS.OP_EQUAL
-  //       ]),
-  //       network: info.regnet.ECPair.network
-  //     }
-  //   }).output as Buffer,  Math.floor(99.99988000 * 100000000)
-  // )
-  // const hash = tx.hashForSignature(
-  //   0,
-  //   bufferFromHex("76a914d4006df88adf603dabaea11c8ae48cfd36cd08d088ac"),
-  //   bitcoinjs.Transaction.SIGHASH_ALL
-  // )
-  // tx.setInputScript(0, bitcoinjs.script.compile([
-  //   bitcoinjs.script.signature.encode(
-  //     info.regnet.ECPair.sign(hash), bitcoinjs.Transaction.SIGHASH_ALL
-  //   ),
-  //   info.regnet.ECPair.publicKey
-  // ]))
-  // console.log(tx.getId())
+  //TODO: p2sh test code
+  const tx = new bitcoinjs.Transaction();
+  tx.addInput(
+    txIdToHash("5e2e3c10aa81e82a37b3c1e054d2731a079f1cf08f9e1e4abf8e634ce8982af9"), 0
+  )
+  tx.addOutput(
+    bitcoinjs.payments.p2sh({
+      redeem: {
+        output: bitcoinjs.script.compile([
+          bitcoinjs.script.OPS.OP_1,
+          bitcoinjs.script.OPS.OP_EQUAL
+        ]),
+        network: info.regnet.ECPair.network
+      }
+    }).output as Buffer,  Math.floor(99.99988000 * 100000000)
+  )
+  const hash = tx.hashForSignature(
+    0,
+    bufferFromHex("76a914d4006df88adf603dabaea11c8ae48cfd36cd08d088ac"),
+    bitcoinjs.Transaction.SIGHASH_ALL
+  )
+  tx.setInputScript(0, bitcoinjs.script.compile([
+    bitcoinjs.script.signature.encode(
+      info.regnet.ECPair.sign(hash), bitcoinjs.Transaction.SIGHASH_ALL
+    ),
+    info.regnet.ECPair.publicKey
+  ]))
+  console.log(tx.getId())
 
   // const tx = new bitcoinjs.Transaction()
   // tx.addInput(
@@ -66,7 +66,7 @@ $userWallets.watch((info) => {
   //   }
   // }).input as Buffer)
   //
-  // console.log(tx.toHex())
+  // console.log(tx.toHex(), tx.getId())
 
 
   //timedatectl set-time YYYY-MM-DD HH:MM:SS

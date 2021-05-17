@@ -26,24 +26,23 @@ export const createHtlcContract = async (
   const allUnsprent = listUnspent.reduce(
     (sum, {value}) => sum + value, 0
   )
-  // console.log(
-  //   listUnspent,
-  //   allUnsprent,
-  //   bitcoinToSat(1),
-  //   bitcoinToSat(allUnsprent),
-  //   bitcoinToSat(allUnsprent - value - 0.00001)
-  // )
   const tx = new bitcoinjs.Transaction();
   listUnspent.forEach(({txid, n}) => {
     tx.addInput(txIdToHash(txid), n)
   })
+  const redeem = createHtlcScript(
+    secretNum,
+    lockTime,
+    acceptorPubKey,
+    ECPair.publicKey
+  ) as Buffer
   tx.addOutput(
-    createHtlcScript(
-      secretNum,
-      lockTime,
-      acceptorPubKey,
-      ECPair.publicKey
-    ),
+    bitcoinjs.payments.p2sh({
+      redeem: {
+        output: redeem,
+        network: ECPair.network
+      }
+    }).output as Buffer,
     bitcoinToSat(value)
   )
   tx.addOutput(
@@ -61,5 +60,5 @@ export const createHtlcContract = async (
       ECPair.publicKey
     ]))
   })
-  return tx.toHex()
+  return {hex: tx.toHex(), redeem}
 }
