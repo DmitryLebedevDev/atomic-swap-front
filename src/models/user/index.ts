@@ -1,5 +1,5 @@
-import {createStore} from "effector"
-import {IuserWallets} from "./types"
+import {attach, createEffect, createEvent, createStore} from "effector"
+import {IuserNetworkKeys, IuserWallets} from "./types"
 import {initUser} from "./initUser";
 import * as bitcoinjs from 'bitcoinjs-lib'
 import { bufferToHex } from "../../common/functions/bufferToHex";
@@ -9,6 +9,8 @@ import {txIdToHash} from "../../common/bitcoin/txIdToHash";
 export const $userWallets = createStore<IuserWallets>(
   initUser()
 )
+export const updateBalanceEvent = createEvent<{wallet: IuserNetworkKeys, balance: number}>()
+export const updateAllBalanceFx = createEffect<IuserWallets, void>()
 
 $userWallets.watch((info) => {
   //TODO: p2sh test code

@@ -2,7 +2,10 @@
   grid-column: 3;
   grid-row: 1;
   margin-top: 4px;
+  .wallet {
+    text-align: center;
+  }
   .wallet + .wallet {
-    margin-top: 10px;
+    margin-top: 15px;
   }
 }

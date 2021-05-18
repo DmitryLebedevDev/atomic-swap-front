@@ -11,9 +11,15 @@ export const UserWalletsInfo = () => {
       {Object.entries(userWallets).map(([nameWallet, walletInfo]) => {
         return (
           <div className={'wallet'} key={nameWallet}>
-            {nameWallet}
-            {` `}
-            {walletInfo.ECPair.publicKey.toString('hex')}
+            <div className={'wallet__name'}>
+              {nameWallet}
+            </div>
+            <div>
+              {walletInfo.ECPair.publicKey.toString('hex')}
+            </div>
+            <div>
+              {walletInfo.balance}
+            </div>
           </div>
         )
       })}
