@@ -3,6 +3,7 @@ import { Card } from 'antd'
 import { PlusOutlined } from '@ant-design/icons'
 import { Iorder } from '../../../../models/orders/types'
 import './OrderCard.scss'
+import {feeForCreateHtlc} from "../../../../common/bitcoin/createHtlcContract";
 
 interface Iprops {
   order: Iorder,
@@ -24,6 +25,7 @@ export const OrderCard:FC<Iprops> = memo(({
       <Card.Meta
         className={'order__title'}
         title={`${fromValue} ${fromValuePair} | ${toValue} ${toValuePair}`}
+        description={`+${feeForCreateHtlc*2} fee`}
       />
     </Card>
   )

@@ -1,22 +1,25 @@
 import {$userWallets, updateAllBalanceFx, updateBalanceEvent} from "./index";
 import {getAddressBalanceReq} from "../../api/rest";
-import {IuserNetworkKeys} from "./types";
-//
-// updateAllBalanceFx.use((wallets) => {
-//   Promise.all(
-//     Object.entries(wallets).map(([network, walletInfo]) => {
-//       getAddressBalanceReq(network, walletInfo.address)
-//       .then(balance => {
-//         updateBalanceEvent(network)
-//       })
-//     })
-//   )
-// })
+import {IuserNetworkKeys, Iwallet} from "./types";
 
-$userWallets.on(updateBalanceEvent, (wallets, {wallet, balance}) => ({
+updateAllBalanceFx.use(async (wallets) => {
+  await Promise.all(
+    Object.entries(wallets).map(([network, walletInfo]) => {
+      getAddressBalanceReq(network as IuserNetworkKeys, walletInfo.address)
+      .then(balance => {
+        updateBalanceEvent({
+          network: network as IuserNetworkKeys,
+          balance
+        })
+      })
+    })
+  )
+})
+
+$userWallets.on(updateBalanceEvent, (wallets, {network, balance}) => ({
   ...wallets,
-  [wallet]: {
-    ...wallets[wallet],
+  [network]: {
+    ...wallets[network],
     balance
   }
 }))

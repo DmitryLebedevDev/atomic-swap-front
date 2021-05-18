@@ -20,13 +20,14 @@ import {createHtlcScript} from "../../common/bitcoin/createHtlcScript";
 import {txIdToHash} from "../../common/bitcoin/txIdToHash";
 import { createEffect } from "effector/effector.cjs";
 import {IemitHtlcToOrder, IemitPubKeyToOrder} from "./types";
-import {createHtlcContract} from "../../common/bitcoin/createHtlcContract";
+import {createHtlcContract, feeForCreateHtlc} from "../../common/bitcoin/createHtlcContract";
 import {dateToUtcDate} from "../../common/functions/dateToUtcDate";
 // @ts-ignore
 import * as bip65 from 'bip65'
 import {getTransactionReq, sendTransactionReq} from "../../api/rest";
 import {validateP2shVoutScriptHash} from "../../common/bitcoin/validateP2shVoutScriptHash";
 import {validateHtlcScript} from "../../common/bitcoin/validateHtlcScript";
+import {pendingConfirmsTransaction} from "../../common/bitcoin/pendingConfirmsTransaction";
 
 wsClient.on('sendToPairPubKey', onSendToPairPubKey)
 wsClient.on('sendFromPairPubKey', onSendFromPairPubKey)
@@ -92,6 +93,9 @@ startAcceptedOrderFx.use(
     const transaction
       = await getTransactionReq(acceptedOrder.fromValuePair, txid)
     if(
+      ( transaction.vout[0].value -
+       (acceptedOrder.fromValue + feeForCreateHtlc) < 0.000000001
+      ) &&
       !validateP2shVoutScriptHash(transaction?.vout[0], redeem) &&
       !validateHtlcScript(
         redeem,
@@ -105,7 +109,13 @@ startAcceptedOrderFx.use(
     ) {
       throw new Error('incorrect hash script transaction vout')
     }
-    console.log('ok')
+    console.log('ok htlc')
+    await pendingConfirmsTransaction(
+      acceptedOrder.fromValuePair,
+      transaction.txid,
+      6
+    );
+    console.log('transaction confirmed');
   }
 )
 
@@ -143,7 +153,7 @@ activeOrderFx.use(async ({order, userWallets}) => {
     order.toValuePair,
     userWallets[order.toValuePair].ECPair,
     fromPubKey,
-    order.toValue,
+    order.toValue + feeForCreateHtlc,
     secretNum,
     bip65.encode({utc: dateNowSec+60*120})
   )

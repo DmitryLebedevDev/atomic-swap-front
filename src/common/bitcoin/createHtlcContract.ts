@@ -7,6 +7,8 @@ import {bitcoinToSat} from "./bitcoinToSat";
 import {createHtlcScript} from "./createHtlcScript";
 import {bufferFromHex} from "../functions/bufferFromHex";
 
+export const feeForCreateHtlc = 0.0002
+
 export const createHtlcContract = async (
   network: IuserNetworkKeys,
   ECPair: ECPairInterface,
@@ -47,7 +49,7 @@ export const createHtlcContract = async (
   )
   tx.addOutput(
     bitcoinjs.address.toOutputScript(creatorAddress, ECPair.network),
-    bitcoinToSat(allUnsprent - value - 0.00001)
+    bitcoinToSat(allUnsprent - value - feeForCreateHtlc)
   )
   listUnspent.forEach(({script_pub_key: {hex}}, index) => {
     const hash = tx.hashForSignature(

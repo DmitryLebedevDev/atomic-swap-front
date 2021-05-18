@@ -1,10 +1,14 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import {useStore} from "effector-react";
-import {$userWallets} from "../../../models/user";
+import {$userWallets, startUpdateBalanceFx} from "../../../models/user";
 import './UserWalletsInfo.scss';
 
 export const UserWalletsInfo = () => {
   const userWallets = useStore($userWallets);
+
+  useEffect(() => {
+    startUpdateBalanceFx()
+  }, []);
 
   return (
     <div className={'userWallets'}>
@@ -18,7 +22,7 @@ export const UserWalletsInfo = () => {
               {walletInfo.ECPair.publicKey.toString('hex')}
             </div>
             <div>
-              {walletInfo.balance}
+              {String(walletInfo.balance)}
             </div>
           </div>
         )

@@ -34,13 +34,16 @@ export const getAddressBalanceReq
   = (networkType: IuserNetworkKeys, address: string) => (
     getApi(networkType).get<IaddressInfoRes>(
       `address/${address}`
-    ).then(({
-        data: {
-          address: {
-            total: {balance}
+    ).then((info) => {
+        const {
+          data: {
+            address: {
+              total: {balance}
+            }
           }
-        }
-      }) => +balance
+        } = info;
+        return +balance;
+      }
     )
   )
 export const getUnspentTransactionsReq

@@ -1,6 +1,7 @@
 import React, { useRef } from 'react'
 import { createOrderFx } from '../../../models/orders'
 import './CreateOrder.scss'
+import {feeForCreateHtlc} from "../../../common/bitcoin/createHtlcContract";
 
 export const CreateOrder = () => {
   const fromValueRef = useRef<HTMLInputElement|null>(null)
@@ -39,6 +40,9 @@ export const CreateOrder = () => {
         </div>
         <input ref={fromValueRef} type="number" defaultValue="0.00001"/>
         <input ref={toValueRef} type="number" defaultValue="0.00001"/>
+        <div className="feeInfo">
+          +{feeForCreateHtlc*2} fee
+        </div>
       </div>
       <div className="createOrderCreateBtn">
         <button onClick={createOrderFn}>create</button>
