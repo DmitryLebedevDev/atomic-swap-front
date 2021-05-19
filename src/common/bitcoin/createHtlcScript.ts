@@ -11,16 +11,18 @@ export enum HtclCodesIndex {
 }
 
 export const createHtlcScript = (
-  secretNum: number,
+  secretNum: number | Buffer,
   lockTime: number,
   acceptorPubKey: Buffer,
   creatorPubKey: Buffer
 ) => {
   return bitcoinjs.script.compile([
       OPS.OP_SHA256,
-      bitcoinjs.crypto.sha256(
-        bitcoinjs.script.number.encode(secretNum)
-      ),
+      (secretNum instanceof Buffer) ?
+        secretNum :
+        bitcoinjs.crypto.sha256(
+          bitcoinjs.script.number.encode(secretNum)
+        ),
       OPS.OP_EQUAL,
       OPS.OP_IF,
         acceptorPubKey, OPS.OP_CHECKSIG,

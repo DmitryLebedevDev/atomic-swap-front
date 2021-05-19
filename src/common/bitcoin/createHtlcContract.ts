@@ -14,7 +14,7 @@ export const createHtlcContract = async (
   ECPair: ECPairInterface,
   acceptorPubKey: Buffer,
   value: number,
-  secretNum: number,
+  secretNum: number | Buffer,
   lockTime: number,
 ) => {
   const creatorAddress: string = bitcoinjs.payments.p2pkh({

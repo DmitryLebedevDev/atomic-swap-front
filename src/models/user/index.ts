@@ -19,6 +19,7 @@ export const startUpdateBalanceFx = attach({
 })
 
 $userWallets.watch((info) => {
+  console.log(info)
   //TODO: p2sh test code
   // const tx = new bitcoinjs.Transaction();
   // tx.addInput(

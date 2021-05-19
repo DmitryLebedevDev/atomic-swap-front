@@ -16,7 +16,7 @@ import { Iorder } from "../orders/types"
 import { bufferFromHex } from "../../common/functions/bufferFromHex"
 import {$userWallets} from "../user";
 import * as bitcoinjs from 'bitcoinjs-lib';
-import {createHtlcScript} from "../../common/bitcoin/createHtlcScript";
+import {createHtlcScript, HtclCodesIndex} from "../../common/bitcoin/createHtlcScript";
 import {txIdToHash} from "../../common/bitcoin/txIdToHash";
 import { createEffect } from "effector/effector.cjs";
 import {IemitHtlcToOrder, IemitPubKeyToOrder} from "./types";
@@ -94,7 +94,7 @@ startAcceptedOrderFx.use(
       = await getTransactionReq(acceptedOrder.fromValuePair, txid)
     if(
       ( transaction.vout[0].value -
-       (acceptedOrder.fromValue + feeForCreateHtlc) < 0.000000001
+        (acceptedOrder.fromValue + feeForCreateHtlc) < 0.000000001
       ) &&
       !validateP2shVoutScriptHash(transaction?.vout[0], redeem) &&
       !validateHtlcScript(
@@ -103,19 +103,31 @@ startAcceptedOrderFx.use(
         bip65({
           utc: (+dateToUtcDate(new Date())+(60*120))/1000^0
         }),
-        60,
+        5,
         fromPubKey
       )
     ) {
-      throw new Error('incorrect hash script transaction vout')
+      throw new Error('incorrect from htlc')
     }
-    console.log('ok htlc')
+    console.log('from ok htlc')
     await pendingConfirmsTransaction(
       acceptedOrder.fromValuePair,
       transaction.txid,
       6
     );
-    console.log('transaction confirmed');
+    console.log('from htlc transaction confirmed');
+    const redeemFromDecompile = bitcoinjs.script.decompile(redeem) as (number | Buffer)[]
+    const dateNowUtcSec = +dateToUtcDate(new Date()) / 1000 ^ 0
+    const htlcFormTo = await createHtlcContract(
+      acceptedOrder.fromValuePair,
+      userWallets[acceptedOrder.fromValuePair].ECPair,
+      toPubKey,
+      acceptedOrder.fromValue + feeForCreateHtlc,
+      redeemFromDecompile[HtclCodesIndex.secretNum] as Buffer,
+      bip65({utc: dateNowUtcSec+60*60}),
+    )
+    const pushTransactionInfo = await sendTransactionReq(acceptedOrder.fromValuePair, htlcFormTo.hex)
+    console.log(pushTransactionInfo, 'sendToHtlc');
   }
 )
 
@@ -145,7 +157,7 @@ activeOrderFx.use(async ({order, userWallets}) => {
   order.fromPubKey = fromPubKey;
   setFromPubKeyForActiveOrderEvent({pubKey: fromPubKey});
 
-  const dateNowSec = +dateToUtcDate(new Date()) / 1000 ^ 0
+  const dateNowUtcSec = +dateToUtcDate(new Date()) / 1000 ^ 0
   const secretNum = window.crypto.getRandomValues(new Uint32Array(1))[0];
 
   const htlcForFrom
@@ -155,7 +167,7 @@ activeOrderFx.use(async ({order, userWallets}) => {
     fromPubKey,
     order.toValue + feeForCreateHtlc,
     secretNum,
-    bip65.encode({utc: dateNowSec+60*120})
+    bip65.encode({utc: dateNowUtcSec+60*120})
   )
   console.log(htlcForFrom)
   const pushTransactionInfo
