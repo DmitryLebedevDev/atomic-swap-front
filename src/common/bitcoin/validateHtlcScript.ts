@@ -1,13 +1,14 @@
 import * as bitcoinjs from 'bitcoinjs-lib'
 import {bufferFromHex} from "../functions/bufferFromHex";
 import {createHtlcScript, HtclCodesIndex} from "./createHtlcScript";
-import {isArray} from "util";
+// @ts-ignore
+import * as bip65 from 'bip65'
 
 export const validateHtlcScript = (
   contract: string | Buffer,
   secretNum: number | null,
   lockTime: number,
-  lockTimeMiss: number,
+  lockTimeMissSec: number,
   mainPubKey: Buffer
 ) => {
   const decodeContract = bitcoinjs.script.decompile(
@@ -31,8 +32,9 @@ export const validateHtlcScript = (
      Array.isArray(decodeExpectedContract) &&
      decodeContractLockTime instanceof Buffer &&
      (Math.abs(
-       lockTime - bitcoinjs.script.number.decode(decodeContractLockTime)
-     ) <= lockTimeMiss)
+       bip65.decode({utc: lockTime}).blocks.utc -
+       bip65.decode({utc: bitcoinjs.script.number.decode(decodeContractLockTime)}).blocks.utc
+     ) <= lockTimeMissSec)
   ) {
     if(secretNum === null) {
       decodeContract[HtclCodesIndex.secretNum] = 0;
