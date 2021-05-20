@@ -14,7 +14,7 @@ import { wsClient, wsClientEmitP, wsClientOnP } from "../../api/ws";
 import { isMainOrder } from "../orders"
 import { Iorder } from "../orders/types"
 import { bufferFromHex } from "../../common/functions/bufferFromHex"
-import {$userWallets} from "../user";
+import {$userWallets, startUpdateBalanceFx, updateAllBalanceFx} from "../user";
 import * as bitcoinjs from 'bitcoinjs-lib';
 import {createHtlcScript, HtclCodesIndex} from "../../common/bitcoin/createHtlcScript";
 import {txIdToHash} from "../../common/bitcoin/txIdToHash";
@@ -28,6 +28,7 @@ import {getTransactionReq, sendTransactionReq} from "../../api/rest";
 import {validateP2shVoutScriptHash} from "../../common/bitcoin/validateP2shVoutScriptHash";
 import {validateHtlcScript} from "../../common/bitcoin/validateHtlcScript";
 import {pendingConfirmsTransaction} from "../../common/bitcoin/pendingConfirmsTransaction";
+import {confirmHtlcContract} from "../../common/bitcoin/confirmHtlcContract";
 
 wsClient.on('sendToPairPubKey', onSendToPairPubKey)
 wsClient.on('sendFromPairPubKey', onSendFromPairPubKey)
@@ -228,6 +229,27 @@ activeOrderFx.use(async ({order, userWallets}) => {
     6
   )
   console.log('to htlc transaction confirmed')
+  const confirmToHtlcTransaction
+    = await sendTransactionReq(
+      order.fromValuePair,
+      confirmHtlcContract(
+        toHtlcTransaction.txid,
+        order.fromValue,
+        bip65.encode({utc: +dateToUtcDate(new Date)/1000^0}),
+        secretNum,
+        redeem,
+        userWallets[order.fromValuePair].ECPair
+      )
+    )
+  if(!confirmToHtlcTransaction.success) {
+    throw new Error('not send confirmToHtlcTransaction')
+  }
+  await pendingConfirmsTransaction(
+    order.fromValuePair,
+    confirmToHtlcTransaction.txid,
+    6
+  );
+  await startUpdateBalanceFx()
 })
 startAcceptedOrderFx.failData.watch((data) => console.log(data));
 
