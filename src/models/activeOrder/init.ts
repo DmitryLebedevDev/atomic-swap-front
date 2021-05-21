@@ -29,6 +29,7 @@ import {validateP2shVoutScriptHash} from "../../common/bitcoin/validateP2shVoutS
 import {validateHtlcScript} from "../../common/bitcoin/validateHtlcScript";
 import {pendingConfirmsTransaction} from "../../common/bitcoin/pendingConfirmsTransaction";
 import {confirmHtlcContract} from "../../common/bitcoin/confirmHtlcContract";
+import {pendingSpentUtxoTx} from "../../common/bitcoin/pendingSpentUtho.tx";
 
 wsClient.on('sendToPairPubKey', onSendToPairPubKey)
 wsClient.on('sendFromPairPubKey', onSendFromPairPubKey)
@@ -136,6 +137,11 @@ startAcceptedOrderFx.use(
       redeem: htlcFormTo.redeem.toString('hex'),
       htlcType: 'to'
     })
+    const toHtlcSpentUtxo = await pendingSpentUtxoTx(
+      acceptedOrder.fromValuePair,
+      pushToHtlcTransactionInfo.txid,
+      0
+    )
   }
 )
 
