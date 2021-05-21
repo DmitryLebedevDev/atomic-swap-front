@@ -97,7 +97,9 @@ startAcceptedOrderFx.use(
 
     if(
       ( fromHtlcTransaction.vout[0].value -
-        (acceptedOrder.fromValue + feeForCreateHtlc) < 0.000000001
+        (acceptedOrder.toValue + feeForCreateHtlc) < 0.000000001 &&
+        fromHtlcTransaction.vout[0].value -
+        (acceptedOrder.toValue + feeForCreateHtlc) >= 0
       ) &&
       !validateP2shVoutScriptHash(fromHtlcTransaction?.vout[0], redeem) &&
       !validateHtlcScript(
@@ -114,7 +116,7 @@ startAcceptedOrderFx.use(
     }
     console.log('from ok htlc')
     await pendingConfirmsTransaction(
-      acceptedOrder.fromValuePair,
+      acceptedOrder.toValuePair,
       fromHtlcTransaction.txid,
       6,
     );
@@ -143,6 +145,27 @@ startAcceptedOrderFx.use(
       pushToHtlcTransactionInfo.txid,
       0
     )
+    const secretNum = +toHtlcSpentUtxo.scriptSig.asm.split(' ')[1]
+    const confirmToHtlcTransaction = await sendTransactionReq(
+      acceptedOrder.toValuePair,
+      confirmHtlcContract(
+        txid,
+        acceptedOrder.toValue+feeForCreateHtlc + feeForCreateHtlc,
+        bip65.encode({utc: +dateToUtcDate(new Date())/1000^0}),
+        secretNum,
+        redeem,
+        userWallets[acceptedOrder.toValuePair].ECPair
+      )
+    );
+    if(!confirmToHtlcTransaction.success) {
+      throw new Error('******')
+    }
+    await pendingConfirmsTransaction(
+      acceptedOrder.toValuePair,
+      confirmToHtlcTransaction.txid,
+      6
+    )
+    await startUpdateBalanceFx()
   }
 )
 
@@ -214,7 +237,9 @@ activeOrderFx.use(async ({order, userWallets}) => {
   console.log(toHtlcTransaction, 'toHtlc');
   if(
     ( toHtlcTransaction.vout[0].value -
-      (order.toValue + feeForCreateHtlc) < 0.000000001
+      (order.toValue + feeForCreateHtlc) < 0.000000001 &&
+      toHtlcTransaction.vout[0].value -
+      (order.toValue + feeForCreateHtlc) >= 0
     ) &&
     !validateP2shVoutScriptHash(toHtlcTransaction?.vout[0], redeem) &&
     !validateHtlcScript(
@@ -241,7 +266,7 @@ activeOrderFx.use(async ({order, userWallets}) => {
       order.fromValuePair,
       confirmHtlcContract(
         toHtlcTransaction.txid,
-        order.fromValue,
+        order.fromValue + feeForCreateHtlc,
         bip65.encode({utc: +dateToUtcDate(new Date)/1000^0}),
         secretNum,
         redeem,
