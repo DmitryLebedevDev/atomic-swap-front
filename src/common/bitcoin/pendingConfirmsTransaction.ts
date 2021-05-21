@@ -3,18 +3,23 @@ import {getTransactionReq} from "../../api/rest";
 import {sleep} from "../functions/sleep";
 
 export const pendingConfirmsTransaction
-  = (network: IuserNetworkKeys, txid: string, confirms: number) => {
-    return new Promise(async (res, rej) => {
-      try {
-        let transaction = await getTransactionReq(network, txid);
-        while ((transaction.confirmations || 0) < confirms) {
-          await sleep(2000);
-          transaction = await getTransactionReq(network, txid);
+  = async (
+    network: IuserNetworkKeys,
+    txid: string,
+    confirms: number,
+    stopTimeMs?: number
+  ) => {
+    try {
+      let transaction = await getTransactionReq(network, txid);
+      while ((transaction.confirmations || 0) < confirms) {
+        await sleep(2000);
+        transaction = await getTransactionReq(network, txid);
+        if(stopTimeMs && +new Date() >= stopTimeMs) {
+          throw new Error('stopTime');
         }
-        res(null);
-      } catch (e) {
-        console.log(e)
-        rej()
       }
-    })
+    } catch (e) {
+      console.log(e)
+      throw new Error(e)
+    }
   }

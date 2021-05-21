@@ -7,7 +7,8 @@ export const pendingSpentUtxoTx
   = async (
     network: IuserNetworkKeys,
     txid: string,
-    n: number
+    n: number,
+    stopTimeMs?: number
 ) => {
   let vinInfo = await getVinForUtxoTransactionReq(network, txid, n)
   while(
@@ -16,6 +17,9 @@ export const pendingSpentUtxoTx
   ) {
     await sleep(2000)
     vinInfo = await getVinForUtxoTransactionReq(network, txid, n)
+    if(stopTimeMs && +new Date() >= stopTimeMs) {
+      throw new Error('end time');
+    }
   }
   if(!vinInfo.success) {
     throw new Error(`transaction or utxo not exist code ${vinInfo.message}`);

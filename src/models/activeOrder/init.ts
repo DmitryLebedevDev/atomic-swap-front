@@ -94,6 +94,7 @@ startAcceptedOrderFx.use(
 
     const fromHtlcTransaction
       = await getTransactionReq(acceptedOrder.fromValuePair, txid)
+
     if(
       ( fromHtlcTransaction.vout[0].value -
         (acceptedOrder.fromValue + feeForCreateHtlc) < 0.000000001
@@ -115,7 +116,7 @@ startAcceptedOrderFx.use(
     await pendingConfirmsTransaction(
       acceptedOrder.fromValuePair,
       fromHtlcTransaction.txid,
-      6
+      6,
     );
     console.log('from htlc transaction confirmed');
     const redeemFromDecompile = bitcoinjs.script.decompile(redeem) as (number | Buffer)[]
