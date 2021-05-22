@@ -9,6 +9,7 @@ import { $orders } from "../orders";
 export const $activeOrder = createStore<Iorder|null>(null)
 
 export const setActiveOrderEvent = createEvent<Iorder>()
+export const clearActiveOrderEvent = createEvent()
 export const onSendToPairPubKey = createEvent<{hexPubKey: string}>()
 export const onSendFromPairPubKey = createEvent<{hexPubKey: string}>()
 export const setFromPubKeyForActiveOrderEvent = createEvent<{pubKey: Buffer}>()

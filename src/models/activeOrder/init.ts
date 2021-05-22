@@ -1,6 +1,6 @@
 import {
   $activeOrder,
-  activeOrderFx,
+  activeOrderFx, clearActiveOrderEvent,
   onActiveOrderFx,
   onSendFromPairPubKey,
   onSendToPairPubKey, sendHtlcToOrderFx,
@@ -145,12 +145,16 @@ startAcceptedOrderFx.use(
       pushToHtlcTransactionInfo.txid,
       0
     )
-    const secretNum = +toHtlcSpentUtxo.scriptSig.asm.split(' ')[1]
+    const secretNum = bitcoinjs.script.number.decode(
+      bufferFromHex(
+        toHtlcSpentUtxo.scriptSig.asm.split(' ')[1]
+      ), 5
+    )
     const confirmToHtlcTransaction = await sendTransactionReq(
       acceptedOrder.toValuePair,
       confirmHtlcContract(
         txid,
-        acceptedOrder.toValue+feeForCreateHtlc + feeForCreateHtlc,
+        acceptedOrder.toValue+feeForCreateHtlc,
         bip65.encode({utc: +dateToUtcDate(new Date())/1000^0}),
         secretNum,
         redeem,
@@ -158,14 +162,15 @@ startAcceptedOrderFx.use(
       )
     );
     if(!confirmToHtlcTransaction.success) {
-      throw new Error('******')
+      throw new Error('confirm to Htlc transaction not send')
     }
     await pendingConfirmsTransaction(
       acceptedOrder.toValuePair,
       confirmToHtlcTransaction.txid,
       6
     )
-    await startUpdateBalanceFx()
+    await startUpdateBalanceFx();
+    clearActiveOrderEvent();
   }
 )
 
@@ -197,6 +202,7 @@ activeOrderFx.use(async ({order, userWallets}) => {
 
   const dateCreateHtlcFromUtcSec = +dateToUtcDate(new Date()) / 1000 ^ 0
   const secretNum = window.crypto.getRandomValues(new Uint32Array(1))[0];
+  console.log(secretNum, 'secret num');
 
   const htlcForFrom
     = await createHtlcContract(
@@ -282,11 +288,13 @@ activeOrderFx.use(async ({order, userWallets}) => {
     6
   );
   await startUpdateBalanceFx()
+  clearActiveOrderEvent()
 })
 startAcceptedOrderFx.failData.watch((data) => console.log(data));
 
 $activeOrder
   .on(setActiveOrderEvent, (_, order) => order)
+  .on(clearActiveOrderEvent, (_, __) => null)
   .on(
     setToPubKeyForActiveOrderEvent,
     (order, {pubKey: toPubKey}) => order ? ({...order, toPubKey}) : null

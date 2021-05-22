@@ -12,8 +12,7 @@ export const pendingSpentUtxoTx
 ) => {
   let vinInfo = await getVinForUtxoTransactionReq(network, txid, n)
   while(
-    !vinInfo.success &&
-    +vinInfo.message === getInfoTxOutputError.utxoNotUnspent
+    !vinInfo.success
   ) {
     await sleep(2000)
     vinInfo = await getVinForUtxoTransactionReq(network, txid, n)
@@ -21,8 +20,6 @@ export const pendingSpentUtxoTx
       throw new Error('end time');
     }
   }
-  if(!vinInfo.success) {
-    throw new Error(`transaction or utxo not exist code ${vinInfo.message}`);
-  }
+
   return vinInfo.vin
 }
