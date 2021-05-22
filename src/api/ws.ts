@@ -17,14 +17,26 @@ export const wsClientEmitP:(event: string, value: any) => Promise<any> = (
 
 export const wsClientOnP = <T,Y>(
   event: string,
-  handleData: (data: T) => Y
+  handleData: (data: T) => Y,
+  stopTimeMs?: number,
 ) => (
-  new Promise<Y>((res) => {
+  new Promise<Y>((res, rej) => {
+    let stopTimerId: NodeJS.Timer
     const onFn = (data: T) => {
-      wsClient.off('event', onFn);
+      clearTimeout(stopTimerId);
+      wsClient.off(event, onFn);
 
       return res(handleData(data));
     };
     wsClient.on(event, onFn);
+    if(stopTimeMs) {
+      stopTimerId = setTimeout(
+        () => {
+          wsClient.off(event, onFn)
+          rej()
+        },
+        stopTimeMs - (+new Date())
+      )
+    }
   })
 )

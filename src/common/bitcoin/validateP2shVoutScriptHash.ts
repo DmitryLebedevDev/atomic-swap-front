@@ -10,6 +10,8 @@ export const validateP2shVoutScriptHash = (
   return (
     scriptPubKey &&
     scriptPubKey.length === 3 &&
-    scriptPubKey[1] === bitcoinjs.crypto.hash160(redeem).toString('hex')
+    scriptPubKey[0] === 'OP_HASH160' &&
+    scriptPubKey[1] === bitcoinjs.crypto.hash160(redeem).toString('hex') &&
+    scriptPubKey[2] === 'OP_EQUAL'
   )
 }

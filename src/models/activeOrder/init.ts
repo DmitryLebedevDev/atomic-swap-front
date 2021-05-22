@@ -30,6 +30,10 @@ import {validateHtlcScript} from "../../common/bitcoin/validateHtlcScript";
 import {pendingConfirmsTransaction} from "../../common/bitcoin/pendingConfirmsTransaction";
 import {confirmHtlcContract} from "../../common/bitcoin/confirmHtlcContract";
 import {pendingSpentUtxoTx} from "../../common/bitcoin/pendingSpentUtho.tx";
+import {Itransaction, Ivin} from "../../api/types";
+import {msToSec} from "../../common/functions/msToSec";
+import {Time} from "../../common/constants/Time";
+import {sleep} from "../../common/functions/sleep";
 
 wsClient.on('sendToPairPubKey', onSendToPairPubKey)
 wsClient.on('sendFromPairPubKey', onSendFromPairPubKey)
@@ -52,13 +56,13 @@ sendHtlcToOrderFx.use(async (sendInfo) => {
 wsClient.on('acceptOrder', onActiveOrderFx)
 startAcceptedOrderFx.use(
   async ({acceptedOrderId, orders, userWallets}) => {
-    const acceptedOrder = orders.find(
+    const order = orders.find(
       (order) => order.id === acceptedOrderId && order[isMainOrder]
     )
-    if(!acceptedOrder) {throw new Error('not find main order')}
+    if(!order) {throw new Error('not find main order')}
 
     const fromPubKey
-      = userWallets[acceptedOrder.toValuePair]
+      = userWallets[order.toValuePair]
           .ECPair
           .publicKey
     const toPubKey
@@ -70,18 +74,18 @@ startAcceptedOrderFx.use(
       )
 
     setActiveOrderEvent({
-      ...acceptedOrder,
+      ...order,
       fromPubKey
     });
     setToPubKeyForActiveOrderEvent({pubKey: toPubKey});
 
     await sendPubKeyToOrderFx({
-      id: acceptedOrder.id,
+      id: order.id,
       hexPubKey: fromPubKey.toString('hex'),
       keyType: 'from'
     })
 
-    const {txid, redeem}
+    const {txid: fromHtlcTxid, redeem: fromHtlcRedeem}
       = await wsClientOnP(
         'sendFromPairHTLC',
       (htlcForFromInfo: Omit<IemitHtlcToOrder, 'htlcType'>) => {
@@ -90,23 +94,24 @@ startAcceptedOrderFx.use(
           ...htlcForFromInfo,
           redeem: bufferFromHex(htlcForFromInfo.redeem)
         }
-      })
+      }, +new Date + Time.minuteMs)
+    const dateGetFromHtlc = new Date()
 
     const fromHtlcTransaction
-      = await getTransactionReq(acceptedOrder.fromValuePair, txid)
+      = await getTransactionReq(order.fromValuePair, fromHtlcTxid)
 
     if(
       ( fromHtlcTransaction.vout[0].value -
-        (acceptedOrder.toValue + feeForCreateHtlc) < 0.000000001 &&
+        (order.toValue + feeForCreateHtlc) < 0.000000001 &&
         fromHtlcTransaction.vout[0].value -
-        (acceptedOrder.toValue + feeForCreateHtlc) >= 0
+        (order.toValue + feeForCreateHtlc) >= 0
       ) &&
-      !validateP2shVoutScriptHash(fromHtlcTransaction?.vout[0], redeem) &&
+      !validateP2shVoutScriptHash(fromHtlcTransaction?.vout[0], fromHtlcRedeem) &&
       !validateHtlcScript(
-        redeem,
+        fromHtlcRedeem,
         null,
         bip65.encode({
-          utc: (+dateToUtcDate(new Date())+(60*240))/1000^0
+          utc: msToSec(+dateToUtcDate(dateGetFromHtlc) + Time.hourMs * 4)
         }),
         5,
         fromPubKey
@@ -114,59 +119,108 @@ startAcceptedOrderFx.use(
     ) {
       throw new Error('incorrect from htlc')
     }
-    console.log('from ok htlc')
+    console.log('from htlc ok')
     await pendingConfirmsTransaction(
-      acceptedOrder.toValuePair,
+      order.toValuePair,
       fromHtlcTransaction.txid,
       6,
-    );
-    console.log('from htlc transaction confirmed');
-    const redeemFromDecompile = bitcoinjs.script.decompile(redeem) as (number | Buffer)[]
-    const dateCreateHtlcToUtcSec = +dateToUtcDate(new Date()) / 1000 ^ 0
-    const htlcFormTo = await createHtlcContract(
-      acceptedOrder.fromValuePair,
-      userWallets[acceptedOrder.fromValuePair].ECPair,
-      toPubKey,
-      acceptedOrder.fromValue + feeForCreateHtlc,
-      redeemFromDecompile[HtclCodesIndex.secretNum] as Buffer,
-      bip65.encode({utc: dateCreateHtlcToUtcSec+60*120}),
+      +dateGetFromHtlc + Time.hourMs
     )
-    const pushToHtlcTransactionInfo = await sendTransactionReq(acceptedOrder.fromValuePair, htlcFormTo.hex)
-    console.log(pushToHtlcTransactionInfo, 'sendToHtlc');
-    if(!pushToHtlcTransactionInfo.success) {throw new Error('not send toHtlc')}
+    console.log('from htlc transaction confirmed');
+
+    const redeemFromDecompile = bitcoinjs.script.decompile(fromHtlcRedeem) as (number | Buffer)[]
+    const dateCreateHtlcTo = new Date();
+    const lockTimeHtlcToMs = Time.hourMs * 2
+    const htlcForTo = await createHtlcContract(
+      order.fromValuePair,
+      userWallets[order.fromValuePair].ECPair,
+      toPubKey,
+      order.fromValue + feeForCreateHtlc,
+      redeemFromDecompile[HtclCodesIndex.secretNum] as Buffer,
+      bip65.encode({
+        utc: msToSec(
+          +dateToUtcDate(dateCreateHtlcTo) + lockTimeHtlcToMs
+        )
+      })
+    )
+    const pushToHtlcTransaction
+      = await sendTransactionReq(
+          order.fromValuePair,
+          htlcForTo.hex
+        )
+    console.log(pushToHtlcTransaction, 'sendToHtlc');
+    if(!pushToHtlcTransaction.success) {
+      throw new Error('not send toHtlc')
+    }
     await sendHtlcToOrderFx({
-      id: acceptedOrder.id,
-      txid: pushToHtlcTransactionInfo.txid,
-      redeem: htlcFormTo.redeem.toString('hex'),
+      id: order.id,
+      txid: pushToHtlcTransaction.txid,
+      redeem: htlcForTo.redeem.toString('hex'),
       htlcType: 'to'
     })
-    const toHtlcSpentUtxo = await pendingSpentUtxoTx(
-      acceptedOrder.fromValuePair,
-      pushToHtlcTransactionInfo.txid,
-      0
-    )
+
+    let toHtlcSpentUtxo: Ivin;
+    try {
+      toHtlcSpentUtxo = await pendingSpentUtxoTx(
+        order.fromValuePair,
+        pushToHtlcTransaction.txid,
+        0,
+        +dateCreateHtlcTo + lockTimeHtlcToMs
+      )
+    } catch (e) {
+      const cancelToHtlcContract = await sendTransactionReq(
+        order.fromValuePair,
+        confirmHtlcContract(
+          pushToHtlcTransaction.txid,
+          order.fromValue + feeForCreateHtlc,
+          bip65.encode({utc: msToSec(+dateToUtcDate(new Date()))}),
+          -1,
+          htlcForTo.redeem,
+          userWallets[order.fromValuePair].ECPair
+        )
+      )
+      if(cancelToHtlcContract.success) {
+        await pendingConfirmsTransaction(
+          order.fromValuePair,
+          cancelToHtlcContract.txid,
+          6
+        )
+        await startUpdateBalanceFx();
+        clearActiveOrderEvent();
+        throw e
+      } else {
+        console.info('cancel transaction send after spent utxo')
+        toHtlcSpentUtxo = await pendingSpentUtxoTx(
+          order.fromValuePair,
+          pushToHtlcTransaction.txid,
+          0,
+          +dateCreateHtlcTo + lockTimeHtlcToMs
+        )
+      }
+    }
+
     const secretNum = bitcoinjs.script.number.decode(
       bufferFromHex(
         toHtlcSpentUtxo.scriptSig.asm.split(' ')[1]
       ), 5
     )
-    const confirmToHtlcTransaction = await sendTransactionReq(
-      acceptedOrder.toValuePair,
+    const confirmFromHtlcTransaction = await sendTransactionReq(
+      order.toValuePair,
       confirmHtlcContract(
-        txid,
-        acceptedOrder.toValue+feeForCreateHtlc,
-        bip65.encode({utc: +dateToUtcDate(new Date())/1000^0}),
+        fromHtlcTxid,
+        order.toValue+feeForCreateHtlc,
+        bip65.encode({utc: msToSec(+dateToUtcDate(new Date()))}),
         secretNum,
-        redeem,
-        userWallets[acceptedOrder.toValuePair].ECPair
+        fromHtlcRedeem,
+        userWallets[order.toValuePair].ECPair
       )
     );
-    if(!confirmToHtlcTransaction.success) {
+    if(!confirmFromHtlcTransaction.success) {
       throw new Error('confirm to Htlc transaction not send')
     }
     await pendingConfirmsTransaction(
-      acceptedOrder.toValuePair,
-      confirmToHtlcTransaction.txid,
+      order.toValuePair,
+      confirmFromHtlcTransaction.txid,
       6
     )
     await startUpdateBalanceFx();
@@ -200,10 +254,12 @@ activeOrderFx.use(async ({order, userWallets}) => {
   order.fromPubKey = fromPubKey;
   setFromPubKeyForActiveOrderEvent({pubKey: fromPubKey});
 
-  const dateCreateHtlcFromUtcSec = +dateToUtcDate(new Date()) / 1000 ^ 0
+
   const secretNum = window.crypto.getRandomValues(new Uint32Array(1))[0];
   console.log(secretNum, 'secret num');
 
+  const dateCreateHtlcFrom = new Date
+  const lockTimeHtlcFromMs = Time.hourMs * 4
   const htlcForFrom
     = await createHtlcContract(
     order.toValuePair,
@@ -211,61 +267,108 @@ activeOrderFx.use(async ({order, userWallets}) => {
     fromPubKey,
     order.toValue + feeForCreateHtlc,
     secretNum,
-    bip65.encode({utc: dateCreateHtlcFromUtcSec+60*240})
+    bip65.encode({
+      utc: msToSec(
+        +dateToUtcDate(dateCreateHtlcFrom) + lockTimeHtlcFromMs
+      )
+    })
   )
   console.log(htlcForFrom)
-  const pushFromTransactionInfo
+  const pushFromHtlcTransaction
     = await sendTransactionReq(
       order.toValuePair,
       htlcForFrom.hex
     )
+  if(!pushFromHtlcTransaction.success) {
+    throw new Error(pushFromHtlcTransaction.message)
+  }
 
-  if(!pushFromTransactionInfo.success) {throw new Error(pushFromTransactionInfo.message)}
   await sendHtlcToOrderFx({
     id: order.id,
-    txid: pushFromTransactionInfo.txid,
+    txid: pushFromHtlcTransaction.txid,
     redeem: htlcForFrom.redeem.toString('hex'),
     htlcType: 'from'
   })
 
-  const {txid, redeem}
-    = await wsClientOnP(
-    'sendToPairHTLC',
-    (htlcForFromInfo: Omit<IemitHtlcToOrder, 'htlcType'>) => {
-      console.log(htlcForFromInfo)
-      return {
-        ...htlcForFromInfo,
-        redeem: bufferFromHex(htlcForFromInfo.redeem)
-      }
-    })
-  const toHtlcTransaction
-    = await getTransactionReq(order.fromValuePair, txid);
-  console.log(toHtlcTransaction, 'toHtlc');
-  if(
-    ( toHtlcTransaction.vout[0].value -
-      (order.toValue + feeForCreateHtlc) < 0.000000001 &&
-      toHtlcTransaction.vout[0].value -
-      (order.toValue + feeForCreateHtlc) >= 0
-    ) &&
-    !validateP2shVoutScriptHash(toHtlcTransaction?.vout[0], redeem) &&
-    !validateHtlcScript(
-      redeem,
-      secretNum,
-      bip65.encode({
-        utc: (+dateToUtcDate(new Date())+(60*120))/1000^0
-      }),
-      60*40,
-      fromPubKey
+  let toHtlcTxid: string, toHtlcRedeem: Buffer;
+  let toHtlcTransaction: Itransaction;
+  try {
+    const sendToPairHTLCData
+      = await wsClientOnP(
+      'sendToPairHTLC',
+      (htlcForFromInfo: Omit<IemitHtlcToOrder, 'htlcType'>) => {
+          console.log(htlcForFromInfo)
+          return {
+            ...htlcForFromInfo,
+            redeem: bufferFromHex(htlcForFromInfo.redeem)
+          }
+        },
+      +new Date() + Time.hourMs
+      )
+    toHtlcTxid = sendToPairHTLCData.txid;
+    toHtlcRedeem = sendToPairHTLCData.redeem;
+    const dateGetToHtlc = new Date()
+
+    toHtlcTransaction
+      = await getTransactionReq(order.fromValuePair, toHtlcTxid);
+    console.log(toHtlcTransaction, 'toHtlc');
+    if(
+      ( toHtlcTransaction.vout[0].value -
+        (order.fromValue + feeForCreateHtlc) < 0.000000001 &&
+        toHtlcTransaction.vout[0].value -
+        (order.fromValue + feeForCreateHtlc) >= 0
+      ) &&
+      !validateP2shVoutScriptHash(toHtlcTransaction?.vout[0], toHtlcRedeem) &&
+      !validateHtlcScript(
+        toHtlcRedeem,
+        secretNum,
+        bip65.encode({
+          utc: msToSec(+dateToUtcDate(dateGetToHtlc) + Time.hourMs * 2)
+        }),
+        5,
+        toPubKey
+      )
+    ) {
+      throw new Error('incorrect from htlc')
+    }
+    console.log('to htlc ok')
+
+    await pendingConfirmsTransaction(
+      order.fromValuePair,
+      toHtlcTransaction.txid,
+      6,
+      +dateGetToHtlc + (Time.hourMs * 2) - Time.minuteMs
     )
-  ) {
-    throw new Error('incorrect from htlc')
+  } catch (e) {
+    await sleep(
+      (+dateCreateHtlcFrom + lockTimeHtlcFromMs) - (+new Date) + Time.minuteMs
+    )
+    const cancelFromHtlcTransaction = await sendTransactionReq(
+      order.fromValuePair,
+      confirmHtlcContract(
+        pushFromHtlcTransaction.txid,
+        order.toValue + feeForCreateHtlc,
+        bip65.encode({
+          utc: msToSec(+dateToUtcDate(new Date))
+        }),
+        -1,
+        htlcForFrom.redeem,
+        userWallets[order.toValuePair].ECPair
+      )
+    )
+    if(!cancelFromHtlcTransaction.success) {
+      throw new Error('cancelFromHtlcTransaction error send')
+    }
+    await pendingConfirmsTransaction(
+      order.fromValuePair,
+      cancelFromHtlcTransaction.txid,
+      6
+    )
+    await startUpdateBalanceFx();
+    clearActiveOrderEvent();
+
+    throw new Error(`${e} || timeout to htlc`)
   }
-  console.log('to htlc ok')
-  await pendingConfirmsTransaction(
-    order.fromValuePair,
-    toHtlcTransaction.txid,
-    6
-  )
   console.log('to htlc transaction confirmed')
   const confirmToHtlcTransaction
     = await sendTransactionReq(
@@ -273,9 +376,11 @@ activeOrderFx.use(async ({order, userWallets}) => {
       confirmHtlcContract(
         toHtlcTransaction.txid,
         order.fromValue + feeForCreateHtlc,
-        bip65.encode({utc: +dateToUtcDate(new Date)/1000^0}),
+        bip65.encode({
+          utc: msToSec(+dateToUtcDate(new Date))
+        }),
         secretNum,
-        redeem,
+        toHtlcRedeem,
         userWallets[order.fromValuePair].ECPair
       )
     )
@@ -290,7 +395,7 @@ activeOrderFx.use(async ({order, userWallets}) => {
   await startUpdateBalanceFx()
   clearActiveOrderEvent()
 })
-startAcceptedOrderFx.failData.watch((data) => console.log(data));
+startAcceptedOrderFx.failData.watch((data) => console.error(data));
 
 $activeOrder
   .on(setActiveOrderEvent, (_, order) => order)

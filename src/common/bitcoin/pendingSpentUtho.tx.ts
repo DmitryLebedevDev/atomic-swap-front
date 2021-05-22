@@ -16,7 +16,7 @@ export const pendingSpentUtxoTx
   ) {
     await sleep(2000)
     vinInfo = await getVinForUtxoTransactionReq(network, txid, n)
-    if(stopTimeMs && +new Date() >= stopTimeMs) {
+    if(!vinInfo.success && stopTimeMs && +new Date() >= stopTimeMs) {
       throw new Error('end time');
     }
   }

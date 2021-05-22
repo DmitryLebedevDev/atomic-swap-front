@@ -14,7 +14,11 @@ export const pendingConfirmsTransaction
       while ((transaction.confirmations || 0) < confirms) {
         await sleep(2000);
         transaction = await getTransactionReq(network, txid);
-        if(stopTimeMs && +new Date() >= stopTimeMs) {
+        if(
+          (transaction.confirmations || 0) < confirms &&
+          stopTimeMs &&
+          +new Date() >= stopTimeMs
+        ) {
           throw new Error('stopTime');
         }
       }
