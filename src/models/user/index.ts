@@ -5,6 +5,7 @@ import * as bitcoinjs from 'bitcoinjs-lib'
 import { bufferToHex } from "../../common/functions/bufferToHex";
 import { bufferFromHex } from "../../common/functions/bufferFromHex";
 import {txIdToHash} from "../../common/bitcoin/txIdToHash";
+import {payments} from "bitcoinjs-lib";
 
 export const $userWallets = createStore<IuserWallets>(
   initUser()
@@ -19,7 +20,28 @@ export const startUpdateBalanceFx = attach({
 })
 
 $userWallets.watch((info) => {
-  console.log(info)
+  // const tx = new bitcoinjs.Transaction();
+  // tx.addInput(txIdToHash('fae6a5ab99074b3462962309dbd909c3371fa0ba4fc43fba31dc3d08c0703bc0'), 1)
+  // tx.addOutput(payments.p2pkh({
+  //   address: 'mwNwv5juUiwknnDi4aLcQX7VVTPehaL6sg',
+  //   network: info.regnet.ECPair.network
+  // }).output as Buffer, Math.round(1318.99344998 * 100000000))
+  // const hash = tx.hashForSignature(
+  //   0,
+  //   bufferFromHex('76a914d4006df88adf603dabaea11c8ae48cfd36cd08d088ac'),
+  //   bitcoinjs.Transaction.SIGHASH_ALL
+  // )
+  // tx.setInputScript(0, payments.p2pkh({
+  //   signature: bitcoinjs.script.signature.encode(
+  //     info.regnet.ECPair.sign(hash),
+  //     bitcoinjs.Transaction.SIGHASH_ALL
+  //   ),
+  //   pubkey: info.regnet.ECPair.publicKey,
+  // }).input as Buffer)
+  //
+  // console.log(tx.toHex());
+  //
+  // console.log(info)
   //TODO: p2sh test code
   // const tx = new bitcoinjs.Transaction();
   // tx.addInput(
