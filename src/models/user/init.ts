@@ -1,10 +1,10 @@
 import {$userWallets, updateAllBalanceFx, updateBalanceEvent} from "./index";
 import {getAddressBalanceReq} from "../../api/rest";
-import {IuserNetworkKeys, Iwallet} from "./types";
+import {IuserNetworkKeys} from "./types";
 
 updateAllBalanceFx.use(async (wallets) => {
   await Promise.all(
-    Object.entries(wallets).map(([network, walletInfo]) => {
+    Object.entries(wallets).map(([network, walletInfo]) => (
       getAddressBalanceReq(network as IuserNetworkKeys, walletInfo.address)
       .then(balance => {
         updateBalanceEvent({
@@ -12,7 +12,7 @@ updateAllBalanceFx.use(async (wallets) => {
           balance
         })
       })
-    })
+    ))
   )
 })
 

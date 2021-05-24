@@ -1,5 +1,4 @@
 import * as bitcoinjs from 'bitcoinjs-lib'
-import {bufferFromHex} from "../functions/bufferFromHex";
 
 const OPS = bitcoinjs.script.OPS;
 

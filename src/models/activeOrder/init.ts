@@ -12,13 +12,10 @@ import {
 } from ".";
 import { wsClient, wsClientEmitP, wsClientOnP } from "../../api/ws";
 import { isMainOrder } from "../orders"
-import { Iorder } from "../orders/types"
 import { bufferFromHex } from "../../common/functions/bufferFromHex"
-import {$userWallets, startUpdateBalanceFx, updateAllBalanceFx} from "../user";
+import {startUpdateBalanceFx} from "../user";
 import * as bitcoinjs from 'bitcoinjs-lib';
-import {createHtlcScript, HtclCodesIndex} from "../../common/bitcoin/createHtlcScript";
-import {txIdToHash} from "../../common/bitcoin/txIdToHash";
-import { createEffect } from "effector/effector.cjs";
+import {HtclCodesIndex} from "../../common/bitcoin/createHtlcScript";
 import {IemitHtlcToOrder, IemitPubKeyToOrder} from "./types";
 import {createHtlcContract, feeForCreateHtlc} from "../../common/bitcoin/createHtlcContract";
 import {dateToUtcDate} from "../../common/functions/dateToUtcDate";
@@ -94,7 +91,7 @@ startAcceptedOrderFx.use(
           ...htlcForFromInfo,
           redeem: bufferFromHex(htlcForFromInfo.redeem)
         }
-      }, +new Date + Time.minuteMs)
+      }, +new Date() + Time.minuteMs)
     const dateGetFromHtlc = new Date()
 
     const fromHtlcTransaction
@@ -173,7 +170,9 @@ startAcceptedOrderFx.use(
         confirmHtlcContract(
           pushToHtlcTransaction.txid,
           order.fromValue + feeForCreateHtlc,
-          bip65.encode({utc: msToSec(+dateToUtcDate(new Date()))}),
+          bip65.encode({
+            utc: msToSec(+dateToUtcDate(new Date()))
+          }),
           -1,
           htlcForTo.redeem,
           userWallets[order.fromValuePair].ECPair
@@ -209,7 +208,9 @@ startAcceptedOrderFx.use(
       confirmHtlcContract(
         fromHtlcTxid,
         order.toValue+feeForCreateHtlc,
-        bip65.encode({utc: msToSec(+dateToUtcDate(new Date()))}),
+        bip65.encode({
+          utc: msToSec(+dateToUtcDate(new Date()))
+        }),
         secretNum,
         fromHtlcRedeem,
         userWallets[order.toValuePair].ECPair
@@ -258,7 +259,7 @@ activeOrderFx.use(async ({order, userWallets}) => {
   const secretNum = window.crypto.getRandomValues(new Uint32Array(1))[0];
   console.log(secretNum, 'secret num');
 
-  const dateCreateHtlcFrom = new Date
+  const dateCreateHtlcFrom = new Date()
   const lockTimeHtlcFromMs = Time.hourMs * 4
   const htlcForFrom
     = await createHtlcContract(
@@ -341,7 +342,7 @@ activeOrderFx.use(async ({order, userWallets}) => {
     )
   } catch (e) {
     await sleep(
-      (+dateCreateHtlcFrom + lockTimeHtlcFromMs) - (+new Date) + Time.minuteMs
+      (+dateCreateHtlcFrom + lockTimeHtlcFromMs) - (+new Date()) + Time.minuteMs
     )
     const cancelFromHtlcTransaction = await sendTransactionReq(
       order.fromValuePair,
@@ -349,7 +350,7 @@ activeOrderFx.use(async ({order, userWallets}) => {
         pushFromHtlcTransaction.txid,
         order.toValue + feeForCreateHtlc,
         bip65.encode({
-          utc: msToSec(+dateToUtcDate(new Date))
+          utc: msToSec(+dateToUtcDate(new Date()))
         }),
         -1,
         htlcForFrom.redeem,
@@ -377,7 +378,7 @@ activeOrderFx.use(async ({order, userWallets}) => {
         toHtlcTransaction.txid,
         order.fromValue + feeForCreateHtlc,
         bip65.encode({
-          utc: msToSec(+dateToUtcDate(new Date))
+          utc: msToSec(+dateToUtcDate(new Date()))
         }),
         secretNum,
         toHtlcRedeem,

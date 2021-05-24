@@ -1,6 +1,5 @@
 import {IuserNetworkKeys} from "../../models/user/types";
 import {getVinForUtxoTransactionReq} from "../../api/rest";
-import {getInfoTxOutputError} from "../../api/types";
 import {sleep} from "../functions/sleep";
 
 export const pendingSpentUtxoTx

@@ -2,12 +2,11 @@ import axios from "axios";
 import { IuserNetworkKeys } from "../models/user/types";
 import {
   IaddressInfoRes,
-  IResStatus, Itransaction,
+  Itransaction,
   IunspentTransaction,
   IunspentTransactionsRes
 } from "./types";
-import {IgetTransactionReq, IrequestResponse, Ivin} from "./types";
-import {networks} from "bitcoinjs-lib";
+import {IrequestResponse, Ivin} from "./types";
 
 
 export const regnetApi = axios.create({
