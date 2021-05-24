@@ -1,11 +1,6 @@
 import {attach, createEffect, createEvent, createStore} from "effector"
 import {IuserNetworkKeys, IuserWallets} from "./types"
-import {initUser} from "./initUser";
-import * as bitcoinjs from 'bitcoinjs-lib'
-import { bufferToHex } from "../../common/functions/bufferToHex";
-import { bufferFromHex } from "../../common/functions/bufferFromHex";
-import {txIdToHash} from "../../common/bitcoin/txIdToHash";
-import {payments} from "bitcoinjs-lib";
+import {initUser} from "./initUser"
 
 export const $userWallets = createStore<IuserWallets>(
   initUser()
