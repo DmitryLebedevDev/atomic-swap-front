@@ -6,7 +6,6 @@ export const validateP2shVoutScriptHash = (
   redeem: Buffer
 ) => {
   const scriptPubKey = vout?.scriptPubKey.asm.split(' ')
-  console.log(scriptPubKey)
   return (
     scriptPubKey &&
     scriptPubKey.length === 3 &&
