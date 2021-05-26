@@ -38,8 +38,8 @@ export const CreateOrder = () => {
         <div>
           values
         </div>
-        <input ref={fromValueRef} type="number" defaultValue="0.00001"/>
-        <input ref={toValueRef} type="number" defaultValue="0.00001"/>
+        <input ref={fromValueRef} type="number" defaultValue="1"/>
+        <input ref={toValueRef} type="number" defaultValue="1"/>
         <div className="feeInfo">
           +{feeForCreateHtlc*2} fee
         </div>

@@ -1,3 +1,3 @@
 export const msToSec = (ms: number) => {
-  return ms/1000^0
+  return Math.floor(ms/1000)
 }

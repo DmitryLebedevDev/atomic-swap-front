@@ -199,10 +199,12 @@ startAcceptedOrderFx.use(
     }
 
     const secretNum = bitcoinjs.script.number.decode(
-      bufferFromHex(
-        toHtlcSpentUtxo.scriptSig.asm.split(' ')[1]
-      ), 5
+      (bitcoinjs.script.decompile(
+        bufferFromHex(toHtlcSpentUtxo.scriptSig.hex)
+      ) as Buffer & [])[1] as Buffer,
+      5
     )
+    console.log(secretNum, 'secret num');
     const confirmFromHtlcTransaction = await sendTransactionReq(
       order.toValuePair,
       confirmHtlcContract(
