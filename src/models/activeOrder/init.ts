@@ -26,7 +26,7 @@ import {validateP2shVoutScriptHash} from "../../common/bitcoin/validateP2shVoutS
 import {validateHtlcScript} from "../../common/bitcoin/validateHtlcScript";
 import {pendingConfirmsTransaction} from "../../common/bitcoin/pendingConfirmsTransaction";
 import {confirmHtlcContract} from "../../common/bitcoin/confirmHtlcContract";
-import {pendingSpentUtxoTx} from "../../common/bitcoin/pendingSpentUtho.tx";
+import {pendingSpentUtxoTx} from "../../common/bitcoin/pendingSpentUtxo";
 import {Itransaction, Ivin} from "../../api/types";
 import {msToSec} from "../../common/functions/msToSec";
 import {Time} from "../../common/constants/Time";
